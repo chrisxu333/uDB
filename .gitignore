@@ -33,3 +33,6 @@
 
 # IDE specific
 .vscode/
+
+# CMake build dir
+build/
