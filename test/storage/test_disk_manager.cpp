@@ -59,7 +59,7 @@ namespace udb{
     ASSERT_EQ(*reinterpret_cast<page_id_t*>(data), page_id);
   }
   
-  TEST(test_table_page, test_init_table_page){
+  TEST(test_table_page, test_init){
     TablePage p;
     page_id_t page_id = 1;
     p.Init(1, PAGE_SIZE);
@@ -69,5 +69,21 @@ namespace udb{
 
     char *data = p.GetData();
     ASSERT_EQ(*reinterpret_cast<page_id_t*>(data), page_id);
+  }
+
+  TEST(test_table_page, test_insert_get_tuple){
+    TablePage p;
+    page_id_t page_id = 1;
+    p.Init(1, PAGE_SIZE);
+
+    char data[] = {'t','e','s','t','\0'};
+    Tuple t(data, 5);
+
+    p.InsertTuple(t);
+
+    Tuple tuple;
+    p.GetTuple(0, &tuple);
+
+    ASSERT_STREQ(tuple.GetTupleData(), data);
   }
 }

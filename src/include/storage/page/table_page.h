@@ -3,6 +3,7 @@
 #include "page.h"
 #include "tuple.h"
 #include "../../common/type.h"
+#include "../../common/debug_logger.h"
 #include <cstring>
 
 namespace udb
@@ -108,7 +109,7 @@ namespace udb
             static constexpr std::size_t OFFSET_FREE_SPACE_POINTER = 16;
             static constexpr std::size_t OFFSET_TUPLE_COUNT = 20;
             static constexpr std::size_t OFFSET_TUPLE_HEADER = 24;
-            static constexpr std::size_t OFFSET_TUPLE_SIZE = 24;
+            static constexpr std::size_t OFFSET_TUPLE_SIZE = 28;
 
             /** @return number of tuple. **/
             uint32_t GetTupleCount(){
@@ -135,8 +136,15 @@ namespace udb
                 return *reinterpret_cast<uint32_t*>(GetData() + OFFSET_TUPLE_HEADER + slot_num * SIZE_TUPLE_HEADER);
             }
 
+            void SetTupleOffset(uint32_t slot_num, uint32_t offset){
+                memcpy(GetData() + OFFSET_TUPLE_HEADER + slot_num * SIZE_TUPLE_HEADER, &offset, sizeof(uint32_t));
+            }
+
             uint32_t GetTupleSize(uint32_t slot_num){
                 return *reinterpret_cast<uint32_t*>(GetData() + OFFSET_TUPLE_SIZE + slot_num * SIZE_TUPLE_HEADER);
+            }
+            void SetTupleSize(uint32_t slot_num, uint32_t size){
+                memcpy(GetData() + OFFSET_TUPLE_SIZE + slot_num * SIZE_TUPLE_HEADER, &size, sizeof(uint32_t));
             }
 
 
