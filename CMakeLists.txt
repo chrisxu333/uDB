@@ -14,31 +14,35 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 
-# Directory
+# Src Directory
 
 set(LIB_DIR ./lib/)
 set(SRC_DIR ./src/)
+set(STORAGE_DIR ${SRC_DIR}storage/)
+
+# Header Directory
 set(INCLUDE_DIR ${SRC_DIR}include/)
+set(INCLUDE_STORAGE_DIR ${INCLUDE_DIR}storage/)
+
+# Test Directory
 set(TEST_DIR ./test/)
+set(TEST_STORAGE_DIR ${TEST_DIR}storage/)
+
+# Include subdirectories
+add_subdirectory(src)
 
 enable_testing()
 
 # Testing executable.
 add_executable(
   udb_test
-  ${TEST_DIR}test_disk_manager.cpp
-  ${SRC_DIR}disk_manager.cpp
-)
-# Main executable
-add_executable(
-  disk_manager
-  ${SRC_DIR}disk_manager.cpp
-  ${INCLUDE_DIR}disk_manager.h
+  ${TEST_STORAGE_DIR}test_disk_manager.cpp
 )
 
 target_link_libraries(
   udb_test
   gtest_main
+  UDB_SRC
 )
 
 include(GoogleTest)

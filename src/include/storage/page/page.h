@@ -2,7 +2,7 @@
 
 #ifndef UDB_PAGE_H
 #define UDB_PAGE_H
-#include "common/type.h"
+#include "../../common/type.h"
 
 namespace udb
 {
@@ -37,9 +37,8 @@ namespace udb
             page_id_t page_id_;
             int pin_count_ = 0;
             bool dirty_bit_ = false;
-            char data_[PAGE_SIZE];
+            char data_[PAGE_SIZE]{};
     };
-    Page::~Page(){}
 } // namespace udb
 
 #endif  //UDB_PAGE_H
