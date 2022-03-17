@@ -11,7 +11,7 @@ namespace udb
             Tuple(char* data, int size) : size_(size){
                 data_ = new char[size];
                 memset(data_, 0, size);
-                memcpy(data_, data, sizeof(size));
+                memcpy(data_, data, size);
             }
             ~Tuple(){
                 if(data_ != nullptr) delete[] data_;

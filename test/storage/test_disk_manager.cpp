@@ -79,11 +79,36 @@ namespace udb{
     char data[] = {'t','e','s','t','\0'};
     Tuple t(data, 5);
 
-    p.InsertTuple(t);
+    bool insert_status = p.InsertTuple(t);
 
     Tuple tuple;
     p.GetTuple(0, &tuple);
 
+    ASSERT_TRUE(insert_status);
     ASSERT_STREQ(tuple.GetTupleData(), data);
+  }
+
+  TEST(test_table_page, test_update_tuple){
+    TablePage p;
+    page_id_t page_id = 1;
+    p.Init(1, PAGE_SIZE);
+
+    char data[] = {'t','e','s','t','\0'};
+    char ndata[] = {'n','e','w','t','e','s','t','\0'};
+    Tuple tuple(data, 5);
+    Tuple ntuple(ndata, 8);
+
+    bool insert_status = p.InsertTuple(tuple);
+    bool update_status = p.UpdateTuple(0, ntuple);
+
+
+    Tuple rtuple;
+    bool get_status = p.GetTuple(0, &rtuple);
+
+    ASSERT_TRUE(insert_status);
+    ASSERT_TRUE(update_status);
+    ASSERT_TRUE(get_status);
+    ASSERT_STREQ(rtuple.GetTupleData(), ndata);
+
   }
 }

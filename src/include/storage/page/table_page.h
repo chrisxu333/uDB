@@ -53,7 +53,7 @@ namespace udb
              * Get designated tuple.
              * 
              * */
-            bool GetTuple(uint32_t slot_num, Tuple* tuple);
+            bool GetTuple(const uint32_t slot_num, Tuple* tuple);
 
             /**
              * 
@@ -69,7 +69,7 @@ namespace udb
              * Insert new tuple.
              * 
              * */
-            bool UpdateTuple(const Tuple &ntuple, Tuple *tuple);
+            bool UpdateTuple(const uint32_t slot_num, const Tuple &ntuple);
 
             /**
              * 

@@ -35,19 +35,38 @@ namespace udb
         return true;
     }
 
-    bool TablePage::GetTuple(uint32_t slot_num, Tuple *tuple){
+    bool TablePage::GetTuple(const uint32_t slot_num, Tuple *tuple){
         if(slot_num > GetTupleCount()) return false;
+
         // first get offset of the tuple
         uint32_t offset = GetTupleOffSet(slot_num);
         uint32_t tuple_size = GetTupleSize(slot_num);
+
         tuple->size_ = tuple_size;
-        if(tuple->data_ == nullptr) tuple->data_ = new char[tuple_size];
+        if(tuple->data_ != nullptr) delete[] tuple->data_;
+        tuple->data_ = new char[tuple_size];
+
         memcpy(tuple->data_, GetData() + offset, tuple_size);
+
         return true;
     }
 
-    bool UpdateTuple(const Tuple &ntuple, Tuple *tuple){
+    bool TablePage::UpdateTuple(const uint32_t slot_num, const Tuple &ntuple){
+        // Get offset and size of the old tuple.
+        uint32_t offset = GetTupleOffSet(slot_num);
+        uint32_t size = GetTupleSize(slot_num);
 
+        // if page doesn't have enough space, return false
+        if(GetFreeSpaceAmount() + size - ntuple.size_ < 0) return false;
+
+        // update data.
+        memmove(GetData() + GetFreeSpacePointer() - ntuple.size_ + size, GetData() + GetFreeSpacePointer(), offset - GetFreeSpacePointer());
+        SetFreeSpacePointer(GetFreeSpacePointer() - ntuple.size_ + size);
+        memcpy(GetData() + offset - ntuple.size_ + size, ntuple.data_, ntuple.size_);
+        SetTupleOffset(slot_num, offset - ntuple.size_ + size);
+        SetTupleSize(slot_num, ntuple.size_);
+
+        return true;
     }
 } // namespace udb
 
