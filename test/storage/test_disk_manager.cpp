@@ -10,6 +10,7 @@ namespace udb{
       rchar++;
       if(rchar == 123) rchar = 97;
     }
+    page_data[PAGE_SIZE - 1] = '\0';
   }
 
   TEST(test_disk_manager, test_read_write_page){
@@ -22,11 +23,10 @@ namespace udb{
     diskManager.storePage(0, content);
     diskManager.loadPage(0,res);
 
-    diskManager.shutDown();
+    EXPECT_STREQ(content,res);
+
     delete[] content;
     delete[] res;
-
-    EXPECT_STREQ(content,res);
 
     remove(".file.udb");
   }
@@ -34,15 +34,12 @@ namespace udb{
   TEST(test_disk_manager, test_get_file_size){
     DiskManager diskManager(".file.udb");
     char* content = new char[PAGE_SIZE];
-
     fillPage(content);
     
     diskManager.storePage(0, content);
-    
-    delete[] content;
-    
     EXPECT_EQ(PAGE_SIZE,diskManager.GetFileSize());
-    
+
+    delete[] content;
     remove(".file.udb");
   }
 

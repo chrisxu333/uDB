@@ -24,7 +24,7 @@ namespace udb{
              * Creates a disk manager that communicate with the specified database file.
              */
             explicit DiskManager(const std::string&);
-            ~DiskManager() = default;
+            ~DiskManager();
             void shutDown();
             void loadPage(page_id_t, char*);
             void storePage(page_id_t, char*);

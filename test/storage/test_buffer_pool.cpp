@@ -11,7 +11,6 @@ namespace udb
 
         ASSERT_EQ(buffer_pool.GetPoolSize(), 5);
 
-        disk_manager->shutDown();
         delete disk_manager;
         remove("file.db");
     }
@@ -23,7 +22,6 @@ namespace udb
         Page* page = buffer_pool.NewPage();
         ASSERT_EQ(page->GetPageId(), static_cast<page_id_t>(0));
 
-        disk_manager->shutDown();
         delete disk_manager;
         remove("file.db");
     }
@@ -38,7 +36,6 @@ namespace udb
             ASSERT_EQ(page->GetPageId(), static_cast<page_id_t>(i));
         }
 
-        disk_manager->shutDown();
         delete disk_manager;
         remove("file.db");
     }
@@ -56,8 +53,8 @@ namespace udb
         ASSERT_EQ(page->GetPageId(), static_cast<page_id_t>(0));
         ASSERT_STREQ(page->GetData(), content);
 
-        disk_manager->shutDown();
         delete disk_manager;
+        delete[] content;
         remove("file.db");
     }
 
