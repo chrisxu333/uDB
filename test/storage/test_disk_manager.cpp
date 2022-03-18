@@ -13,7 +13,7 @@ namespace udb{
   }
 
   TEST(test_disk_manager, test_read_write_page){
-    udb::DiskManager diskManager(".file.udb");
+    DiskManager diskManager(".file.udb");
     char* content = new char[PAGE_SIZE];
     char* res = new char[PAGE_SIZE];
 
@@ -32,7 +32,7 @@ namespace udb{
   }
 
   TEST(test_disk_manager, test_get_file_size){
-    udb::DiskManager diskManager(".file.udb");
+    DiskManager diskManager(".file.udb");
     char* content = new char[PAGE_SIZE];
 
     fillPage(content);

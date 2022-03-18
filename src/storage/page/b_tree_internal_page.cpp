@@ -3,9 +3,9 @@
 namespace udb
 {
     template<typename KeyType, typename ValueType, typename KeyComparator>
-    void BTreeInternalPage<KeyType, ValueType, KeyComparator>::Init(page_id_t page_id, page_id_t parent_id = INVALID_PAGE_ID, int max_size = INTERNAL_PAGE_SIZE){
+    void BTreeInternalPage<KeyType, ValueType, KeyComparator>::Init(page_id_t page_id, page_id_t parent_id, int max_size){
         page_id_ = page_id;
-        parent_id_ = INVALID_PAGE_ID;
+        parent_page_id_ = INVALID_PAGE_ID;
         max_size_ = max_size;
         page_type_ = IndexPageType::INTERNAL_PAGE;
         size_ = 0;

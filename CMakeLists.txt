@@ -37,6 +37,7 @@ enable_testing()
 add_executable(
   udb_test
   ${TEST_STORAGE_DIR}test_disk_manager.cpp
+  ${TEST_STORAGE_DIR}test_buffer_pool.cpp
 )
 
 target_link_libraries(

@@ -71,8 +71,9 @@ namespace udb
              * */
             void Insert(const KeyType& key, const ValueType& value);
 
-            //============== Split and Merge Related Methods ==============//
-
+            //============== Split and Merge Methods ==============//
+            
+            void Split();
 
             
         private:

@@ -19,8 +19,9 @@ namespace udb{
     class DiskManager{
         public:
             /**
+             * @param db_file 
+             *      the name of the database file.
              * Creates a disk manager that communicate with the specified database file.
-             * @param db_file specified for the name of the database file.
              */
             explicit DiskManager(const std::string&);
             ~DiskManager() = default;

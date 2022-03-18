@@ -8,6 +8,7 @@ namespace udb{
     static constexpr int INVALID_LSN = -1;      // invalid LSN
     
     using page_id_t = int32_t;
+    using frame_id_t = int32_t;
     using lsn_t = int32_t;         // log sequence number type
 };
 

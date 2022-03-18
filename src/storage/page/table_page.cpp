@@ -2,8 +2,6 @@
 
 namespace udb
 {
-    Page::~Page(){}
-
     void TablePage::Init(page_id_t page_id, uint32_t page_size, page_id_t prev_page_id){
         memcpy(GetData(), &page_id, sizeof(page_id));
         SetPrevPageId(prev_page_id);

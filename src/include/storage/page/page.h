@@ -3,6 +3,7 @@
 #ifndef UDB_PAGE_H
 #define UDB_PAGE_H
 #include "../../common/type.h"
+#include <cstring>
 
 namespace udb
 {
@@ -14,9 +15,10 @@ namespace udb
     //      4. data: data contained by the page.
     // Page opeartion
     class Page{
+        friend class BufferPool;
         public:
             Page() = default;
-            virtual ~Page() = 0;    // force this class to be abstract so no class could inistantiate it.
+            ~Page() = default;    // force this class to be abstract so no class could inistantiate it.
             /** @return data_ **/
             inline char* GetData(){
                 return data_;
@@ -32,6 +34,9 @@ namespace udb
             /** @return dirty_bit_ **/
             inline bool isDirty(){
                 return dirty_bit_;
+            }
+            inline void meminit(){
+                memset(data_, 0, PAGE_SIZE);
             }
         private:
             page_id_t page_id_;
