@@ -70,11 +70,11 @@ namespace udb
              * @param value
              * Insert key-value pair such that the keys_ array is still in ascending order.
              * */
-            void Insert(const KeyType& key, const ValueType& value, BufferPool* buffer_pool);
+            void Insert(const KeyType& key, const ValueType& value, BufferPool* buffer_pool, KeyComparator comparator);
 
             //============== Split and Merge Methods ==============//
             
-            void Split(BufferPool* buffer_pool);
+            void Split(BufferPool* buffer_pool, KeyComparator comparator);
             
         private:
             void copyHalfTo(BTreeInternalPage<KeyType, ValueType, KeyComparator>* page);

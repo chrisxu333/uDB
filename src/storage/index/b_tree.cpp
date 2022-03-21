@@ -45,7 +45,7 @@ namespace udb
         // find which leaf page to insert first.
         LeafPage* target_page = findLeafPage(key);
         // call Insert() on that LeafPage.
-        target_page->Insert(key, value, buffer_pool_);
+        target_page->Insert(key, value, buffer_pool_, comparator_);
         // Update root page id.
         UpdateRoot();
     }
@@ -59,10 +59,6 @@ namespace udb
             root = reinterpret_cast<InternalPage*>(cur_page->GetData());
         }
         root_page_id_ = root->GetPageId();
-    }
-
-    template<typename KeyType, typename ValueType, typename KeyComparator>
-    void BTree<KeyType, ValueType, KeyComparator>::remove(){
     }
 
     template<typename KeyType, typename ValueType, typename KeyComparator>

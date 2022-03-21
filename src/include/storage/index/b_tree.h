@@ -38,16 +38,14 @@ namespace udb
              * */
             void insert(const KeyType& key, const ValueType& value);
 
+            void vis();
+
+        private:
             /**
              * 
              * 
              * 
              * */
-            void remove();
-
-            void vis();
-
-        private:
             void UpdateRoot();
             KeyComparator comparator_;
             page_id_t root_page_id_;

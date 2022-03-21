@@ -42,18 +42,22 @@ namespace udb
     }
 
     template<typename KeyType, typename ValueType, typename KeyComparator>
-    void BTreeInternalPage<KeyType, ValueType, KeyComparator>::Insert(const KeyType& key, const ValueType& value, BufferPool* buffer_pool){
+    void BTreeInternalPage<KeyType, ValueType, KeyComparator>::Insert(const KeyType& key, const ValueType& value, BufferPool* buffer_pool, KeyComparator comparator){
         std::pair<KeyType, ValueType> tmp = {key, value};
         keys_[size_] = tmp;
         size_++;
+        std::sort(keys_, keys_ + size_, 
+            [comparator](const std::pair<KeyType, ValueType>& lhs, const std::pair<KeyType, ValueType>& rhs){
+                return comparator(lhs.first, rhs.first) < 0; 
+            });
         if(size_ == max_size_ - 1) {
             LOG_DEBUG("Internal split");
-            Split(buffer_pool);
+            Split(buffer_pool, comparator);
         }
     }
 
     template<typename KeyType, typename ValueType, typename KeyComparator>
-    void BTreeInternalPage<KeyType, ValueType, KeyComparator>::Split(BufferPool* buffer_pool){
+    void BTreeInternalPage<KeyType, ValueType, KeyComparator>::Split(BufferPool* buffer_pool, KeyComparator comparator){
         // 0. if there's no parent for this page right now, create one.
         if(parent_page_id_ == INVALID_PAGE_ID){
             Page* new_parent_page = buffer_pool->NewPage();
@@ -61,7 +65,7 @@ namespace udb
             parent_page->Init(new_parent_page->GetPageId(), INVALID_PAGE_ID, max_size_);
             new_parent_page->SetDirty();
             SetParentPageId(parent_page->GetPageId());
-            parent_page->Insert(0, page_id_, buffer_pool);
+            parent_page->Insert(0, page_id_, buffer_pool, comparator);
         }
         // // 1. create a new sibling page.
         Page* new_page = buffer_pool->NewPage();
@@ -75,7 +79,7 @@ namespace udb
         // 3. Add pointer from parent page to new sibling page
         Page* p_page = buffer_pool->GetPage(parent_page_id_);
         BTreeInternalPage<KeyType, ValueType, KeyComparator>* parent_page = reinterpret_cast<BTreeInternalPage<KeyType, ValueType, KeyComparator>*>(p_page->GetData());
-        parent_page->Insert(page->KeyAt(0), page->GetPageId(), buffer_pool);
+        parent_page->Insert(page->KeyAt(0), page->GetPageId(), buffer_pool, comparator);
     }
 
     template<typename KeyType, typename ValueType, typename KeyComparator>
