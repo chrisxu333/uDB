@@ -1,4 +1,4 @@
-#include "../include/storage/buffer_pool.h"
+#include "include/storage/buffer_pool/buffer_pool.h"
 
 namespace udb
 {
@@ -40,6 +40,11 @@ namespace udb
         }else{
             fid = lru_cache_->replace();
             page = &pages_[fid];
+            pool_.erase(pages_[fid].page_id_);
+            if(page->isDirty()){
+                // flush it to disk before swap it out.
+                disk_manager_->storePage(page->GetPageId(), page->data_);
+            }
         }
         // Not cached, needs to get it from the disk.
         // Save mapping relation in the pool.
@@ -67,7 +72,13 @@ namespace udb
             lru_cache_->insert(fid);
         }else{
             fid = lru_cache_->replace();
+            // remove the mapping
+            pool_.erase(pages_[fid].page_id_);
             page = &pages_[fid];
+            if(page->isDirty()){
+                // flush it to disk before swap it out.
+                disk_manager_->storePage(page->GetPageId(), page->data_);
+            }
         }
 
         pool_[page_id] = fid;

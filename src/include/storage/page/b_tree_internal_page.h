@@ -1,6 +1,7 @@
 #ifndef UDB_B_TREE_INTERNAL_PAGE_H
 #define UDB_B_TREE_INTERNAL_PAGE_H
-#include "b_tree_page.h"
+#include "include/storage/page/b_tree_page.h"
+#include "include/common/debug_logger.h"
 #include <vector>
 
 namespace udb
@@ -21,7 +22,7 @@ namespace udb
     class BTreeInternalPage : public BTreePage{
         public:
             BTreeInternalPage() = default;
-            ~BTreeInternalPage();
+            ~BTreeInternalPage() = default;
 
             /**
              * @param page_id
@@ -69,17 +70,20 @@ namespace udb
              * @param value
              * Insert key-value pair such that the keys_ array is still in ascending order.
              * */
-            void Insert(const KeyType& key, const ValueType& value);
+            void Insert(const KeyType& key, const ValueType& value, BufferPool* buffer_pool);
 
             //============== Split and Merge Methods ==============//
             
-            void Split();
-
+            void Split(BufferPool* buffer_pool);
             
         private:
+            void copyHalfTo(BTreeInternalPage<KeyType, ValueType, KeyComparator>* page);
+
+            void updateParentId(BTreeInternalPage<KeyType, ValueType, KeyComparator>* page, BufferPool* buffer_pool);
+            
             // A KeyType <-> ValueType pairing mapping container. This allows us to 
             // look up key or value at given index.
-            std::vector<std::pair<KeyType, ValueType>> keys_;
+            std::pair<KeyType, ValueType> keys_[INTERNAL_PAGE_SIZE];
     };
     
 } // namespace udb

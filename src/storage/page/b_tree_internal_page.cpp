@@ -1,15 +1,15 @@
 #include "../../include/storage/page/b_tree_internal_page.h"
+#include <cassert>
 
 namespace udb
 {
     template<typename KeyType, typename ValueType, typename KeyComparator>
     void BTreeInternalPage<KeyType, ValueType, KeyComparator>::Init(page_id_t page_id, page_id_t parent_id, int max_size){
         page_id_ = page_id;
-        parent_page_id_ = INVALID_PAGE_ID;
+        parent_page_id_ = parent_id;
         max_size_ = max_size;
         page_type_ = IndexPageType::INTERNAL_PAGE;
         size_ = 0;
-        keys_.resize(max_size);
     }
 
     template<typename KeyType, typename ValueType, typename KeyComparator>
@@ -30,34 +30,73 @@ namespace udb
     template<typename KeyType, typename ValueType, typename KeyComparator>
     ValueType BTreeInternalPage<KeyType, ValueType, KeyComparator>::LookUp(const KeyType& key, const KeyComparator& comparator) const{
         // Version 1: linear search
-        size_t i = 0;
-        while(i < size_ && comparator(keys_[i].first, key) > 0){
-            i++;
+        if(comparator(KeyAt(1), key) > 0) return ValueAt(0);
+        for(size_t i = 1; i < size_; ++i){
+            if(comparator(KeyAt(i), key) > 0){
+                // find the first key that is larger than or equal to given key, return it
+                return ValueAt(i - 1);
+            }
         }
-        if(i != size_) return keys_[i].second;
-        return INVALID_PAGE_ID;
+        // Ideally, this return should never be called.
+        return ValueAt(size_ - 1);
     }
 
     template<typename KeyType, typename ValueType, typename KeyComparator>
-    void BTreeInternalPage<KeyType, ValueType, KeyComparator>::Insert(const KeyType& key, const ValueType& value){
-        if(size_ == max_size_){
-            // split
-        }else{
-            // simple, just add a new pair in the end.
-            std::pair<KeyType, ValueType> tmp = {key, value};
-            keys_[size_] = tmp;
-            size_++;
+    void BTreeInternalPage<KeyType, ValueType, KeyComparator>::Insert(const KeyType& key, const ValueType& value, BufferPool* buffer_pool){
+        std::pair<KeyType, ValueType> tmp = {key, value};
+        keys_[size_] = tmp;
+        size_++;
+        if(size_ == max_size_ - 1) {
+            LOG_DEBUG("Internal split");
+            Split(buffer_pool);
         }
     }
 
     template<typename KeyType, typename ValueType, typename KeyComparator>
-    void BTreeInternalPage<KeyType, ValueType, KeyComparator>::Split(){
-        // Split process consists of the following:
-        // 1. create a new sibling page.
-        // 2. copy the half from original to sibling page
+    void BTreeInternalPage<KeyType, ValueType, KeyComparator>::Split(BufferPool* buffer_pool){
+        // 0. if there's no parent for this page right now, create one.
+        if(parent_page_id_ == INVALID_PAGE_ID){
+            Page* new_parent_page = buffer_pool->NewPage();
+            BTreeInternalPage<KeyType, page_id_t, KeyComparator>* parent_page = reinterpret_cast<BTreeInternalPage<KeyType, page_id_t, KeyComparator>*>(new_parent_page->GetData());
+            parent_page->Init(new_parent_page->GetPageId(), INVALID_PAGE_ID, max_size_);
+            new_parent_page->SetDirty();
+            SetParentPageId(parent_page->GetPageId());
+            parent_page->Insert(0, page_id_, buffer_pool);
+        }
+        // // 1. create a new sibling page.
+        Page* new_page = buffer_pool->NewPage();
+        // // 2. copy the half from original to sibling page
+        BTreeInternalPage<KeyType, ValueType, KeyComparator>* page = reinterpret_cast<BTreeInternalPage<KeyType, ValueType, KeyComparator>*>(new_page->GetData());
+        page->Init(new_page->GetPageId(), parent_page_id_, max_size_);
+        new_page->SetDirty();
+        copyHalfTo(page);
+        updateParentId(page, buffer_pool);
+
         // 3. Add pointer from parent page to new sibling page
-        // 4. If parent page overflows, recursively call split on that page until root.
+        Page* p_page = buffer_pool->GetPage(parent_page_id_);
+        BTreeInternalPage<KeyType, ValueType, KeyComparator>* parent_page = reinterpret_cast<BTreeInternalPage<KeyType, ValueType, KeyComparator>*>(p_page->GetData());
+        parent_page->Insert(page->KeyAt(0), page->GetPageId(), buffer_pool);
     }
+
+    template<typename KeyType, typename ValueType, typename KeyComparator>
+    void BTreeInternalPage<KeyType, ValueType, KeyComparator>::copyHalfTo(BTreeInternalPage<KeyType, ValueType, KeyComparator>* dest){
+        size_t mvsize = size_ / 2;  // we only want the second half.
+        memmove(dest->keys_, keys_ + mvsize, (size_ - mvsize) * sizeof(std::pair<KeyType, ValueType>));
+        dest->SetSize(size_ - mvsize);
+        SetSize(mvsize);
+    }
+
+    template<typename KeyType, typename ValueType, typename KeyComparator>
+    void BTreeInternalPage<KeyType, ValueType, KeyComparator>::updateParentId(BTreeInternalPage<KeyType, ValueType, KeyComparator>* page, BufferPool* buffer_pool){
+        for(size_t i = 0; i < page->GetSize(); ++i){
+            Page* tmp = buffer_pool->GetPage(page->ValueAt(i));
+            BTreeInternalPage<KeyType, ValueType, KeyComparator>* btree_page = reinterpret_cast<BTreeInternalPage<KeyType, ValueType, KeyComparator>*>(tmp->GetData());
+            btree_page->SetParentPageId(page->GetPageId());
+            tmp->SetDirty();
+        }
+    }
+
+    template class BTreeInternalPage<int, page_id_t, IntComparator>;
 
 } // namespace udb
 

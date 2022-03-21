@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
 project(udb)
 
+include_directories("./src")
+
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 11)
 
@@ -38,6 +40,7 @@ add_executable(
   udb_test
   ${TEST_STORAGE_DIR}test_disk_manager.cpp
   ${TEST_STORAGE_DIR}test_buffer_pool.cpp
+  ${TEST_STORAGE_DIR}test_b_tree.cpp
 )
 
 target_link_libraries(

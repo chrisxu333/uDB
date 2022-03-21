@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 
 
-#include "../common/type.h"
+#include "include/common/type.h"
 
 
 namespace udb{

@@ -1,5 +1,5 @@
-#include "../../src/include/storage/disk_manager.h"
-#include "../../src/include/storage/page/table_page.h"
+#include "include/storage/disk_manager.h"
+#include "include/storage/page/table_page.h"
 #include <gtest/gtest.h>
 
 namespace udb{

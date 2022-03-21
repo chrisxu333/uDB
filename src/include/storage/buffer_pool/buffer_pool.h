@@ -1,9 +1,10 @@
 #ifndef UDB_BUFFER_POOL_H
 #define UDB_BUFFER_POOL_H
-#include "../common/type.h"
-#include "./page/page.h"
-#include "disk_manager.h"
-#include "LRU_cache.h"
+#include "include/common/type.h"
+#include "include/storage/page/page.h"
+#include "include/storage/disk_manager.h"
+#include "include/storage/buffer_pool/LRU_cache.h"
+
 #include <map>
 #include <list>
 

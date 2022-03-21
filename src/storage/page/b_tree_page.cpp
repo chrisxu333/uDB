@@ -1,4 +1,4 @@
-#include "../../include/storage/page/b_tree_page.h"
+#include "include/storage/page/b_tree_page.h"
 
 namespace udb
 {

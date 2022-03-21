@@ -2,7 +2,7 @@
 
 #ifndef UDB_PAGE_H
 #define UDB_PAGE_H
-#include "../../common/type.h"
+#include "include/common/type.h"
 #include <cstring>
 
 namespace udb
@@ -37,6 +37,9 @@ namespace udb
             }
             inline void meminit(){
                 memset(data_, 0, PAGE_SIZE);
+            }
+            inline void SetDirty(){
+                dirty_bit_ = true;
             }
         private:
             page_id_t page_id_;

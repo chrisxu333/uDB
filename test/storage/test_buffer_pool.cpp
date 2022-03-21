@@ -1,4 +1,5 @@
-#include "../../src/include/storage/buffer_pool.h"
+#include "include/storage/buffer_pool/buffer_pool.h"
+#include "include/storage/page/b_tree_page.h"
 #include <gtest/gtest.h>
 
 namespace udb
@@ -57,5 +58,4 @@ namespace udb
         delete[] content;
         remove("file.db");
     }
-
 } // namespace udb

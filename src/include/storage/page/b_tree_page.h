@@ -1,7 +1,13 @@
 #ifndef UDB_INDEX_PAGE_H
 #define UDB_INDEX_PAGE_H
 
-#include "page.h"
+#include "include/storage/page/page.h"
+#include "include/storage/buffer_pool/buffer_pool.h"
+#include "include/storage/index/int_comparator.h"
+#include "include/common/rid.h"
+#include "include/storage/index/ktype/Integer.h"
+
+#include <algorithm>
 
 namespace udb
 {
@@ -21,9 +27,6 @@ namespace udb
      * */
     class BTreePage{
         public:
-            BTreePage() = default;
-            ~BTreePage() = default;
-
             bool isLeafPage() const;
             bool isInternalPage() const;
             void SetPageType(IndexPageType type);
@@ -35,12 +38,15 @@ namespace udb
             page_id_t GetParentPageId() const;
             void SetPageId(page_id_t page_id);
             void SetParentPageId(page_id_t parent_page_id);
+        // The pointer would store the data in the following way.
         protected:
             IndexPageType page_type_;
+            // TODO: Replace this with lsn_t type
+            uint32_t lsn_;
             int size_;
             int max_size_;
-            page_id_t page_id_;
             page_id_t parent_page_id_;
+            page_id_t page_id_;
     };
 } // namespace udb
 #endif
