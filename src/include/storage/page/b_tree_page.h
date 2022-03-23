@@ -12,6 +12,7 @@
 namespace udb
 {
     enum class IndexPageType {INVALID_INDEX_PAGE = 0, LEAF_PAGE, INTERNAL_PAGE};
+    enum class MergeMode {APPEND = 0, INSERT};
     /**
      * 
      * B Tree Page Header structure.

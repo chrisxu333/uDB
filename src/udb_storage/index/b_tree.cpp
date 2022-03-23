@@ -44,11 +44,22 @@ namespace udb
     void BTree<KeyType, ValueType, KeyComparator>::insert(const KeyType& key, const ValueType& value){
         // find which leaf page to insert first.
         LeafPage* target_page = findLeafPage(key);
-        // call Insert() on that LeafPage.
+        // insert on leaf page and backtrack all the way to the top.
         target_page->Insert(key, value, buffer_pool_, comparator_);
         // Update root page id.
         UpdateRoot();
     }
+
+    template<typename KeyType, typename ValueType, typename KeyComparator>
+    void BTree<KeyType, ValueType, KeyComparator>::remove(const KeyType& key){
+        // 1) Start at the root and go up to leaf node containing the key K
+        // 2) Find the node n on the path from the root to the leaf node containing K
+        LeafPage* target_page = findLeafPage(key);
+        target_page->Remove(key, buffer_pool_, comparator_);
+        // Update root page id.
+        UpdateRoot();
+    }
+
 
     template<typename KeyType, typename ValueType, typename KeyComparator>
     void BTree<KeyType, ValueType, KeyComparator>::UpdateRoot(){
@@ -59,6 +70,7 @@ namespace udb
             root = reinterpret_cast<InternalPage*>(cur_page->GetData());
         }
         root_page_id_ = root->GetPageId();
+        if(root->GetSize() == 1) root_page_id_ = root->ValueAt(0);
     }
 
     template<typename KeyType, typename ValueType, typename KeyComparator>
@@ -101,7 +113,7 @@ namespace udb
                     }
                     std::cout << ") --------";
                 }else{
-                    std::cout << "Page " << p->GetPageId() << ": ";
+                    std::cout << "Page " << p->GetPageId() << " (" << p->GetParentPageId() << ") : ";
                     for(size_t i = 0; i < p->GetSize(); ++i){
                         q.push(p->ValueAt(i));
                         std::cout << "(" << p->KeyAt(i) << " " << p->ValueAt(i) << ")";

@@ -47,6 +47,7 @@ namespace udb
         int offset = page_id * PAGE_SIZE;
         // validate the offset 
         if(offset > GetFileSize()){
+            std::cout << page_id << std::endl;
             throw std::out_of_range("Page doesn't exist in database file.");
         }
         db_file_io_.seekp(offset);

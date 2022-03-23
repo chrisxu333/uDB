@@ -101,12 +101,16 @@ namespace udb
         // create a b+ tree
         BTree<int, RID, IntComparator> btree(buffer_pool, cmp, 7);
         RID id;
-        for(size_t i = 0; i < 25; ++i){
+        for(size_t i = 0; i < 26; ++i){
             id.Set(0,i);
             btree.insert(i, id);
         }
-        id.Set(0, 200);
-        btree.insert(10, id);
+        btree.remove(9);
+        btree.remove(10);
+        btree.remove(19);
+        btree.remove(20);
+        btree.remove(1);
+        btree.remove(2);
         btree.vis();
         remove(".file.udb");
     }

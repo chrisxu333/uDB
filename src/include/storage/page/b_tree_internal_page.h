@@ -65,6 +65,9 @@ namespace udb
              * */
             ValueType LookUp(const KeyType& key, const KeyComparator &comparator) const;
 
+            size_t lookUpIndex(const KeyType& key, KeyComparator comparator) const;
+
+
             /**
              * @param key
              * @param value
@@ -72,13 +75,22 @@ namespace udb
              * */
             void Insert(const KeyType& key, const ValueType& value, BufferPool* buffer_pool, KeyComparator comparator);
 
+            /**
+             * @param key
+             * @param buffer_pool
+             * @param comparator
+             * Remove key-value pair at given @key.
+             * */
+            void Remove(const KeyType& key, BufferPool* buffer_pool, KeyComparator comparator);
+
             //============== Split and Merge Methods ==============//
             
             void Split(BufferPool* buffer_pool, KeyComparator comparator);
+            void Merge(BufferPool* buffer_pool, KeyComparator comparator);
             
         private:
             void copyHalfTo(BTreeInternalPage<KeyType, ValueType, KeyComparator>* page);
-
+            void copyAllTo(BTreeInternalPage<KeyType, ValueType, KeyComparator>* dest, MergeMode mode);
             void updateParentId(BTreeInternalPage<KeyType, ValueType, KeyComparator>* page, BufferPool* buffer_pool);
             
             // A KeyType <-> ValueType pairing mapping container. This allows us to 

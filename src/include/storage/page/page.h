@@ -31,6 +31,11 @@ namespace udb
             inline int GetPinCount(){
                 return pin_count_;
             }
+
+            inline int SetPinCount(int pin_count){
+                pin_count_ = pin_count;
+            }
+
             /** @return dirty_bit_ **/
             inline bool isDirty(){
                 return dirty_bit_;

@@ -38,6 +38,12 @@ namespace udb
              * */
             void insert(const KeyType& key, const ValueType& value);
 
+            /**
+             * @param key
+             * Remove given @key.
+             * */
+            void remove(const KeyType& key);
+
             void vis();
 
         private:

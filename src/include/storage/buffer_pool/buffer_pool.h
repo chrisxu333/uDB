@@ -36,6 +36,10 @@ namespace udb
              * */
             Page* NewPage();
 
+            void Pin(page_id_t page_id);
+
+            void UnPin(page_id_t page_id);
+
         private:
             /**
              * @return page_id_t

@@ -38,7 +38,7 @@ namespace udb
             page = &pages_[fid];
             lru_cache_->insert(fid);
         }else{
-            fid = lru_cache_->replace();
+            while(pages_[fid].pin_count_ != 0) fid = lru_cache_->replace();
             page = &pages_[fid];
             pool_.erase(pages_[fid].page_id_);
             if(page->isDirty()){
@@ -52,7 +52,7 @@ namespace udb
         // update fields of the page.
         page->page_id_ = page_id;
         page->dirty_bit_ = false;
-        page->pin_count_ = 0;
+        page->pin_count_ = 1;
 
         // Load the page from disk.
         disk_manager_->loadPage(page_id, page->data_);
@@ -71,7 +71,7 @@ namespace udb
             page = &pages_[fid];
             lru_cache_->insert(fid);
         }else{
-            fid = lru_cache_->replace();
+            while(pages_[fid].pin_count_ != 0) fid = lru_cache_->replace();
             // remove the mapping
             pool_.erase(pages_[fid].page_id_);
             page = &pages_[fid];
@@ -84,7 +84,7 @@ namespace udb
         pool_[page_id] = fid;
         page->page_id_ = page_id;
         page->dirty_bit_ = false;
-        page->pin_count_ = 0;
+        page->pin_count_ = 1;
         page->meminit();
 
         disk_manager_->storePage(page_id, page->data_);
@@ -98,5 +98,17 @@ namespace udb
 
     page_id_t BufferPool::ualloc(){
         return page_id_++;
+    }
+
+    void BufferPool::Pin(page_id_t page_id){
+        frame_id_t frame_id = pool_[page_id];
+        Page* page = &pages_[frame_id];
+        page->pin_count_++;
+    }
+
+    void BufferPool::UnPin(page_id_t page_id){
+        frame_id_t frame_id = pool_[page_id];
+        Page* page = &pages_[frame_id];
+        page->pin_count_--;
     }
 } // namespace udb
