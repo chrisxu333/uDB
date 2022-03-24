@@ -46,7 +46,7 @@ namespace udb
         std::pair<KeyType, ValueType> tmp = {key, value};
         keys_[size_] = tmp;
         size_++;
-        std::sort(keys_, keys_ + size_, 
+        std::sort(keys_ + 1, keys_ + size_, 
             [comparator](const std::pair<KeyType, ValueType>& lhs, const std::pair<KeyType, ValueType>& rhs){
                 return comparator(lhs.first, rhs.first) < 0; 
             });
@@ -61,7 +61,7 @@ namespace udb
     void BTreeInternalPage<KeyType, ValueType, KeyComparator>::Remove(const KeyType& key, BufferPool* buffer_pool, KeyComparator comparator){
         // 1. find the location of index, linear search
         size_t idx = lookUpIndex(key, comparator);
-        if(idx == -1) return;
+        //if(idx == 0) return;
         // record removed key
         KeyType okey = this->KeyAt(0);
         // 2. remove and rearrange keys_
@@ -73,7 +73,6 @@ namespace udb
         Page* parent = nullptr;
         page_id_t parent_id = parent_page_id_;
 
-        std::cout << page_id_ << parent_id << idx << std::endl;
         while(parent_id != INVALID_PAGE_ID && idx == 0){
             std::cout << parent_id << std::endl;
             parent = buffer_pool->GetPage(parent_id);
@@ -85,9 +84,9 @@ namespace udb
         }
         // 4. if size_ still larger than [M/2], return
         // 5. otherwise will have to merge it with its siblings.
-        if(size_ < (max_size_ / 2) && size_ != 1){
+        if(size_ < (max_size_ / 2) && size_ != 1 && parent_page_id_ != INVALID_PAGE_ID){
             LOG_DEBUG("merge internal");
-            Merge(buffer_pool, comparator);
+            Merge(okey, buffer_pool, comparator);
             // 6. now update the parent node.
         }
     }
@@ -120,7 +119,7 @@ namespace udb
     }
 
     template<typename KeyType, typename ValueType, typename KeyComparator>
-    void BTreeInternalPage<KeyType, ValueType, KeyComparator>::Merge(BufferPool* buffer_pool, KeyComparator comparator){
+    void BTreeInternalPage<KeyType, ValueType, KeyComparator>::Merge(KeyType okey, BufferPool* buffer_pool, KeyComparator comparator){
         // Find parent
         Page* parent_page = buffer_pool->GetPage(this->parent_page_id_);
         BTreeInternalPage<KeyType, page_id_t, KeyComparator>* p_page = reinterpret_cast<BTreeInternalPage<KeyType, page_id_t, KeyComparator>*>(parent_page->GetData());
@@ -163,6 +162,9 @@ namespace udb
         // 2. If borrow won't work, then we have to merge and redistribute.
         if(lsib_page != nullptr){
             LOG_DEBUG("Merge left");
+            for(size_t i = 0; i < size_; ++i){
+                std::cout << KeyAt(i) << ValueAt(i) << std::endl;
+            }
             copyAllTo(lsib_page, MergeMode::APPEND);
             size_t c_idx = p_page->lookUpIndex(this->KeyAt(0), comparator);
             p_page->Remove(p_page->KeyAt(c_idx), buffer_pool, comparator);
@@ -205,7 +207,7 @@ namespace udb
 
     template<typename KeyType, typename ValueType, typename KeyComparator>
     size_t BTreeInternalPage<KeyType, ValueType, KeyComparator>::lookUpIndex(const KeyType& key, KeyComparator comparator) const{
-        for(size_t i = 0; i < size_; ++i){
+        for(size_t i = 1; i < size_; ++i){
             if(comparator(KeyAt(i), key) == 0){
                 // find the first key that matches the result. 
                 // TODO: Support non-unique key in the future.
@@ -213,7 +215,7 @@ namespace udb
             }
         }
         // Ideally, this return should never be called.
-        return -1;
+        return 0;
     }
 
     template<typename KeyType, typename ValueType, typename KeyComparator>

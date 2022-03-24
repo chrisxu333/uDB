@@ -86,7 +86,7 @@ namespace udb
             //============== Split and Merge Methods ==============//
             
             void Split(BufferPool* buffer_pool, KeyComparator comparator);
-            void Merge(BufferPool* buffer_pool, KeyComparator comparator);
+            void Merge(KeyType okey, BufferPool* buffer_pool, KeyComparator comparator);
             
         private:
             void copyHalfTo(BTreeInternalPage<KeyType, ValueType, KeyComparator>* page);

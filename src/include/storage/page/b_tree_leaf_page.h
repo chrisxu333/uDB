@@ -85,7 +85,7 @@ namespace udb
             
             void Split(BufferPool* buffer_pool, KeyComparator comparator);
 
-            void Merge(BufferPool* buffer_pool, KeyComparator comparator);
+            void Merge(KeyType okey, BufferPool* buffer_pool, KeyComparator comparator);
             
         private:
             void copyHalfTo(BTreeLeafPage<KeyType, ValueType, KeyComparator>* page);

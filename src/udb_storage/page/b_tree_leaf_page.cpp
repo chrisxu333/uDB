@@ -46,10 +46,26 @@ namespace udb
         std::pair<KeyType, ValueType> tmp = {key, value};
         keys_[size_] = tmp;
         size_++;
+        KeyType okey = KeyAt(0);
         std::sort(keys_, keys_ + size_, 
             [comparator](const std::pair<KeyType, ValueType>& lhs, const std::pair<KeyType, ValueType>& rhs){
                 return comparator(lhs.first, rhs.first) < 0; 
             });
+        // if inserted is the smallest, update parent all the way to the top
+        // Page* parent;
+        // page_id_t parent_id = parent_page_id_;
+
+        // size_t idx = (comparator(okey, KeyAt(0)) == 0) ? -1 : 0;
+
+        // while(parent_id != INVALID_PAGE_ID && idx == 0){
+        //     parent = buffer_pool->GetPage(parent_id);
+        //     BTreeInternalPage<KeyType, page_id_t, KeyComparator>* parent_page = reinterpret_cast<BTreeInternalPage<KeyType, page_id_t, KeyComparator>*>(parent->GetData());
+        //     idx = parent_page->lookUpIndex(okey, comparator);
+        //     // update key in the parent node.
+        //     parent_page->SetKeyAt(idx, KeyAt(0));
+        //     parent_id = parent_page->GetParentPageId();
+        // }
+
         if(size_ == max_size_) {
             LOG_DEBUG("Leaf split.");
             Split(buffer_pool, comparator);
@@ -68,25 +84,28 @@ namespace udb
             keys_[i] = keys_[i + 1];
         }
         this->size_--;
+
+        // 4. if size_ still larger than [M/2], return
+        // 5. otherwise will have to merge it with its siblings.
+        if(size_ < (max_size_ / 2) && parent_page_id_ != INVALID_PAGE_ID){
+            LOG_DEBUG("merge ops");
+            Merge(okey, buffer_pool, comparator);
+            // 6. now update the parent node.
+        }
+
         // 3. if idx is 0, then also update it in the parent node.
         Page* parent;
         page_id_t parent_id = parent_page_id_;
 
-        std::cout << page_id_ << parent_id << idx << std::endl;
-        while(parent_id != INVALID_PAGE_ID && idx == 0){
-            parent = buffer_pool->GetPage(parent_id);
-            BTreeInternalPage<KeyType, page_id_t, KeyComparator>* parent_page = reinterpret_cast<BTreeInternalPage<KeyType, page_id_t, KeyComparator>*>(parent->GetData());
-            idx = parent_page->lookUpIndex(okey, comparator);
-            // update key in the parent node.
-            parent_page->SetKeyAt(idx, KeyAt(0));
-            parent_id = parent_page->GetParentPageId();
-        }
-        // 4. if size_ still larger than [M/2], return
-        // 5. otherwise will have to merge it with its siblings.
-        if(size_ < (max_size_ / 2)){
-            LOG_DEBUG("merge ops");
-            Merge(buffer_pool, comparator);
-            // 6. now update the parent node.
+        if(idx == 0){
+            while(parent_id != INVALID_PAGE_ID && idx == 0){
+                parent = buffer_pool->GetPage(parent_id);
+                BTreeInternalPage<KeyType, page_id_t, KeyComparator>* parent_page = reinterpret_cast<BTreeInternalPage<KeyType, page_id_t, KeyComparator>*>(parent->GetData());
+                idx = parent_page->lookUpIndex(okey, comparator);
+                // update key in the parent node.
+                parent_page->SetKeyAt(idx, KeyAt(0));
+                parent_id = parent_page->GetParentPageId();
+            }
         }
     }
 
@@ -96,7 +115,7 @@ namespace udb
         if(parent_page_id_ == INVALID_PAGE_ID){
             Page* new_parent_page = buffer_pool->NewPage();
             BTreeInternalPage<KeyType, page_id_t, KeyComparator>* parent_page = reinterpret_cast<BTreeInternalPage<KeyType, page_id_t, KeyComparator>*>(new_parent_page->GetData());
-            parent_page->Init(new_parent_page->GetPageId(), INVALID_PAGE_ID, max_size_);
+            parent_page->Init(new_parent_page->GetPageId(), INVALID_PAGE_ID, max_size_ + 1);
             new_parent_page->SetDirty();
             SetParentPageId(parent_page->GetPageId());
             parent_page->Insert(0, page_id_, buffer_pool, comparator);
@@ -119,11 +138,11 @@ namespace udb
     }
 
     template<typename KeyType, typename ValueType, typename KeyComparator>
-    void BTreeLeafPage<KeyType, ValueType, KeyComparator>::Merge(BufferPool* buffer_pool, KeyComparator comparator){
+    void BTreeLeafPage<KeyType, ValueType, KeyComparator>::Merge(KeyType okey, BufferPool* buffer_pool, KeyComparator comparator){
         // Find parent
         Page* parent_page = buffer_pool->GetPage(this->parent_page_id_);
         BTreeInternalPage<KeyType, page_id_t, KeyComparator>* p_page = reinterpret_cast<BTreeInternalPage<KeyType, page_id_t, KeyComparator>*>(parent_page->GetData());
-        size_t curpage_idx = p_page->lookUpIndex(this->KeyAt(0), comparator);
+        size_t curpage_idx = p_page->lookUpIndex(okey, comparator);
         // Try borrow from siblings first.
         // Try to borrow from left sibling.
         // Get left sibling.
@@ -136,13 +155,10 @@ namespace udb
             LOG_DEBUG("borrow from left");
             this->Insert(lsib_page->KeyAt(lsib_page->GetSize() - 1), lsib_page->ValueAt(lsib_page->GetSize() - 1), buffer_pool, comparator);
             lsib_page->Remove(lsib_page->KeyAt(lsib_page->GetSize() - 1), buffer_pool, comparator);
-            // update parent.
-            p_page->SetKeyAt(curpage_idx, this->KeyAt(0));
             return;
         }
         //  b. try to borrow from right sibling.
         if(curpage_idx != p_page->GetSize() - 1){
-            LOG_DEBUG("prepare borrow right");
             Page* rsibling_page = buffer_pool->GetPage(p_page->ValueAt(curpage_idx + 1));
             rsib_page = reinterpret_cast<BTreeLeafPage<KeyType, ValueType, KeyComparator>*>(rsibling_page->GetData());
         }
@@ -155,9 +171,10 @@ namespace udb
         }
         // 2. If borrow won't work, then we have to merge and redistribute.
         LOG_DEBUG("Merge");
-        size_t c_idx = p_page->lookUpIndex(this->KeyAt(0), comparator);
+        size_t c_idx = p_page->lookUpIndex(okey, comparator);
         // Try to merge with left sibling first.
         if(lsib_page != nullptr){
+            LOG_DEBUG("Merge with lsib");
             copyAllTo(lsib_page, MergeMode::APPEND);
             // SET parent key one level up so that it could propagate through the chain
             p_page->SetKeyAt(c_idx - 1, lsib_page->KeyAt(0));
@@ -165,9 +182,12 @@ namespace udb
             return;
         }
         if(rsib_page != nullptr){
+            LOG_DEBUG("Merge with rsib");
             copyAllTo(rsib_page, MergeMode::INSERT);
             // SET parent key one level up so that it could propagate through the chain
             p_page->SetKeyAt(c_idx + 1, rsib_page->KeyAt(0));
+            std::cout << "Update " << p_page->KeyAt(c_idx + 1)  << p_page->ValueAt(c_idx + 1) << std::endl;
+            std::cout << "Prepare to delete: " << p_page->KeyAt(c_idx) << std::endl;
             p_page->Remove(p_page->KeyAt(c_idx), buffer_pool, comparator);
             return;
         }

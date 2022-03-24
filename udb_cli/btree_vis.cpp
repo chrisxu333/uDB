@@ -14,9 +14,9 @@ int main(){
     BufferPool* buffer_pool = new BufferPool(50, disk_manager);
     IntComparator cmp;
     // create a b+ tree
-    BTree<int, RID, IntComparator> btree(buffer_pool, cmp, 7);
+    BTree<int, RID, IntComparator> btree(buffer_pool, cmp, 5);
     RID id;
-    for(size_t i = 0; i < 26; ++i){
+    for(size_t i = 1; i <= 19; ++i){
         id.Set(0,i);
         btree.insert(i, id);
     }

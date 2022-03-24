@@ -70,7 +70,14 @@ namespace udb
             root = reinterpret_cast<InternalPage*>(cur_page->GetData());
         }
         root_page_id_ = root->GetPageId();
-        if(root->GetSize() == 1) root_page_id_ = root->ValueAt(0);
+        if(root->GetSize() == 1 && root->isInternalPage()) {
+            // update all parent_id of pages in root keys_
+            Page* single_child_page = buffer_pool_->GetPage(root->ValueAt(0));
+            InternalPage* s_page = reinterpret_cast<InternalPage*>(single_child_page->GetData());
+            s_page->SetParentPageId(INVALID_PAGE_ID);
+            // update root_page_id_
+            root_page_id_ = root->ValueAt(0);
+        }
     }
 
     template<typename KeyType, typename ValueType, typename KeyComparator>
