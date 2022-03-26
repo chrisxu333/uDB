@@ -208,10 +208,11 @@ namespace udb
     template<typename KeyType, typename ValueType, typename KeyComparator>
     size_t BTreeInternalPage<KeyType, ValueType, KeyComparator>::lookUpIndex(const KeyType& key, KeyComparator comparator) const{
         for(size_t i = 1; i < size_; ++i){
-            if(comparator(KeyAt(i), key) == 0){
+            if(comparator(KeyAt(i), key) >= 0){
                 // find the first key that matches the result. 
                 // TODO: Support non-unique key in the future.
-                return i;
+                if(comparator(KeyAt(i), key) == 0) return i;
+                else return i - 1;
             }
         }
         // Ideally, this return should never be called.

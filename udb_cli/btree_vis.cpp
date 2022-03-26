@@ -16,7 +16,7 @@ int main(){
     // create a b+ tree
     BTree<int, RID, IntComparator> btree(buffer_pool, cmp, 5);
     RID id;
-    for(size_t i = 1; i <= 19; ++i){
+    for(size_t i = 1; i <= 29; ++i){
         id.Set(0,i);
         btree.insert(i, id);
     }
