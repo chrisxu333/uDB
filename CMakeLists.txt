@@ -33,16 +33,18 @@ add_executable(
   ${TEST_STORAGE_DIR}test_disk_manager.cpp
   ${TEST_STORAGE_DIR}test_buffer_pool.cpp
   ${TEST_STORAGE_DIR}test_b_tree.cpp
+  ${TEST_STORAGE_DIR}test_bplus_tree.cpp
 )
 
 add_executable(
-  udb_cli
-  ${CLI_DIR}btree_vis.cpp
+  udb_bptree_test
+  ${TEST_STORAGE_DIR}test_bplus_tree.cpp
 )
 
 target_link_libraries(
-  udb_cli
+  udb_bptree_test
   UDB_SRC
+  gtest_main
 )
 
 target_link_libraries(
