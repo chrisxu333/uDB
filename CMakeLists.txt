@@ -36,17 +36,6 @@ add_executable(
   ${TEST_STORAGE_DIR}test_bplus_tree.cpp
 )
 
-add_executable(
-  udb_bptree_test
-  ${TEST_STORAGE_DIR}test_bplus_tree.cpp
-)
-
-target_link_libraries(
-  udb_bptree_test
-  UDB_SRC
-  gtest_main
-)
-
 target_link_libraries(
   udb_test
   gtest_main
