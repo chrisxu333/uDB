@@ -3,6 +3,7 @@
 #ifndef UDB_PAGE_H
 #define UDB_PAGE_H
 #include "include/common/type.h"
+#include "include/common/rwlatch.h"
 #include <cstring>
 
 namespace udb
@@ -51,6 +52,7 @@ namespace udb
             int pin_count_ = 0;
             bool dirty_bit_ = false;
             char data_[PAGE_SIZE];
+            RWlatch rwlatch_;
     };
 } // namespace udb
 

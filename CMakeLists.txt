@@ -32,12 +32,22 @@ add_executable(
   udb_test
   ${TEST_STORAGE_DIR}test_disk_manager.cpp
   ${TEST_STORAGE_DIR}test_buffer_pool.cpp
-  ${TEST_STORAGE_DIR}test_b_tree.cpp
   ${TEST_STORAGE_DIR}test_bplus_tree.cpp
+)
+
+add_executable(
+  udb_util_test
+  ${TEST_DIR}util/test_rwlatch.cpp
 )
 
 target_link_libraries(
   udb_test
+  gtest_main
+  UDB_SRC
+)
+
+target_link_libraries(
+  udb_util_test
   gtest_main
   UDB_SRC
 )
