@@ -38,7 +38,10 @@ namespace udb
             page = &pages_[fid];
             lru_cache_->insert(fid);
         }else{
-            while(pages_[fid].pin_count_ != 0) fid = lru_cache_->replace();
+            do{
+                fid = lru_cache_->replace();
+            }
+            while(pages_[fid].pin_count_ != 0);
             page = &pages_[fid];
             pool_.erase(pages_[fid].page_id_);
             if(page->isDirty()){
@@ -71,7 +74,10 @@ namespace udb
             page = &pages_[fid];
             lru_cache_->insert(fid);
         }else{
-            while(pages_[fid].pin_count_ != 0) fid = lru_cache_->replace();
+            do{
+                fid = lru_cache_->replace();
+            }
+            while(pages_[fid].pin_count_ != 0);
             // remove the mapping
             pool_.erase(pages_[fid].page_id_);
             page = &pages_[fid];

@@ -35,6 +35,7 @@ namespace udb
         for(size_t i = 0; i < 7; ++i){
             Page* page = buffer_pool.NewPage();
             ASSERT_EQ(page->GetPageId(), static_cast<page_id_t>(i));
+            buffer_pool.UnPin(page->GetPageId());
         }
 
         delete disk_manager;
