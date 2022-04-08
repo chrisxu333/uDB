@@ -3,7 +3,8 @@
 
 namespace udb
 {
-	int BPTreeInternalPage::parent_node_build(BPTree* tree, int page_id_left, int page_id_right, int key, int level, BufferPool* buffer_pool){
+	template<typename KeyType, typename ValueType, typename KeyComparator>
+	int BPTreeInternalPage<KeyType, ValueType, KeyComparator>::parent_node_build(BPTree<KeyType, ValueType, KeyComparator>* tree, int page_id_left, int page_id_right, KeyType key, int level, BufferPool* buffer_pool){
 		Page* left_page = buffer_pool->GetPage(page_id_left);
 		BPTreePage* left = reinterpret_cast<BPTreeInternalPage*>(left_page->GetData());
 		left_page->SetDirty();
@@ -46,7 +47,8 @@ namespace udb
 		}
 	}
 
-	int BPTreeInternalPage::non_leaf_insert(BPTree* tree, int page_id_l_ch,  int page_id_r_ch, int key, int level, BufferPool* buffer_pool){
+	template<typename KeyType, typename ValueType, typename KeyComparator>
+	int BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_insert(BPTree<KeyType, ValueType, KeyComparator>* tree, int page_id_l_ch,  int page_id_r_ch, KeyType key, int level, BufferPool* buffer_pool){
 			/* search key location */
 			int insert = key_binary_search(GetChildren() - 1, key);
 			insert = -insert - 1;
@@ -91,8 +93,8 @@ namespace udb
 			return 0;
 	}
 
-
-	void BPTreeInternalPage::non_leaf_simple_insert(BPTreePage *l_ch, BPTreePage *r_ch, int key, int insert){
+	template<typename KeyType, typename ValueType, typename KeyComparator>
+	void BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_simple_insert(BPTreePage *l_ch, BPTreePage *r_ch, KeyType key, int insert){
 		int i;
 		for (i = GetChildren() - 1; i > insert; i--) {
 			SetKeyAt(i, KeyAt(i - 1));
@@ -107,7 +109,8 @@ namespace udb
 		SetChildren(GetChildren() + 1);
 	}
 
-	int BPTreeInternalPage::key_binary_search(int len, int target){
+	template<typename KeyType, typename ValueType, typename KeyComparator>
+	int BPTreeInternalPage<KeyType, ValueType, KeyComparator>::key_binary_search(int len, int target){
 		int low = -1;
 		int high = len;
 		while (low + 1 < high) {
@@ -125,7 +128,8 @@ namespace udb
 		}
 	}
 
-	int BPTreeInternalPage::non_leaf_split_left( BPTreeInternalPage *left, BPTreePage *l_ch,  BPTreePage *r_ch, int key, int insert, BufferPool* buffer_pool){
+	template<typename KeyType, typename ValueType, typename KeyComparator>
+	int BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_split_left( BPTreeInternalPage<KeyType, ValueType, KeyComparator> *left, BPTreePage *l_ch,  BPTreePage *r_ch, KeyType key, int insert, BufferPool* buffer_pool){
 		int i, j, order = GetChildren();
 		int split_key;
 		/* split = [m/2] */
@@ -190,8 +194,8 @@ namespace udb
 		return split_key;
 	}
 
-
-	int BPTreeInternalPage::non_leaf_split_right1(BPTreeInternalPage *right, BPTreePage *l_ch,  BPTreePage *r_ch, int key, int insert, BufferPool* buffer_pool){
+	template<typename KeyType, typename ValueType, typename KeyComparator>
+	int BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_split_right1(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *right, BPTreePage *l_ch,  BPTreePage *r_ch, KeyType key, int insert, BufferPool* buffer_pool){
 		int i, j, order = GetChildren();
 		int split_key;
 		/* split = [m/2] */
@@ -201,7 +205,7 @@ namespace udb
 		right->SetLeftSib(GetPageId());
 		if(GetRightSib() != -1) {
 			Page* rsib_page = buffer_pool->GetPage(GetRightSib());
-			BPTreeInternalPage* rsib = reinterpret_cast<BPTreeInternalPage*>(rsib_page->GetData());
+			BPTreeInternalPage<KeyType, ValueType, KeyComparator>* rsib = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(rsib_page->GetData());
 			rsib_page->SetDirty();
 			rsib->SetLeftSib(right->GetPageId());
 		}
@@ -230,7 +234,8 @@ namespace udb
 		return split_key;
 	}
 
-	int BPTreeInternalPage::non_leaf_split_right2(BPTreeInternalPage *right, BPTreePage *l_ch,  BPTreePage *r_ch, int key, int insert, BufferPool* buffer_pool){
+	template<typename KeyType, typename ValueType, typename KeyComparator>
+	int BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_split_right2(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *right, BPTreePage *l_ch,  BPTreePage *r_ch, KeyType key, int insert, BufferPool* buffer_pool){
 		int i, j, order = GetChildren();
 		int split_key;
 		/* split = [m/2] */
@@ -240,7 +245,7 @@ namespace udb
 		right->SetLeftSib(GetPageId());
 		if(GetRightSib() != -1){
 			Page* rsib_page = buffer_pool->GetPage(GetRightSib());
-			BPTreeInternalPage* rsib = reinterpret_cast<BPTreeInternalPage*>(rsib_page->GetData());
+			BPTreeInternalPage<KeyType, ValueType, KeyComparator>* rsib = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(rsib_page->GetData());
 			rsib_page->SetDirty();
 			rsib->SetLeftSib(right->GetPageId());
 		}
@@ -283,19 +288,20 @@ namespace udb
 		return split_key;
 	}
 
-	void BPTreeInternalPage::non_leaf_delete(BPTreeInternalPage *node, BufferPool* buffer_pool)
+	template<typename KeyType, typename ValueType, typename KeyComparator>
+	void BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_delete(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *node, BufferPool* buffer_pool)
 	{
 		if(node->GetLeftSib() == -1 && node->GetRightSib() == -1) return;
 		else{
 			if(node->GetLeftSib() != -1) {
 				Page* lsib_page = buffer_pool->GetPage(node->GetLeftSib());
-				BPTreeInternalPage* lsib = reinterpret_cast<BPTreeInternalPage*>(lsib_page->GetData());
+				BPTreeInternalPage<KeyType, ValueType, KeyComparator>* lsib = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(lsib_page->GetData());
 				lsib_page->SetDirty();
 				lsib->SetRightSib(node->GetRightSib());
 			}
 			if(node->GetRightSib() != -1) {
 				Page* rsib_page = buffer_pool->GetPage(node->GetRightSib());
-				BPTreeInternalPage* rsib = reinterpret_cast<BPTreeInternalPage*>(rsib_page->GetData());
+				BPTreeInternalPage<KeyType, ValueType, KeyComparator>* rsib = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(rsib_page->GetData());
 				rsib_page->SetDirty();
 				rsib->SetLeftSib(node->GetLeftSib());
 			}
@@ -303,7 +309,10 @@ namespace udb
 		}
 	}
 
-	SiblingType BPTreeInternalPage::non_leaf_sibling_select(BPTreeInternalPage *l_sib, BPTreeInternalPage *r_sib, BPTreeInternalPage *parent, int i)
+	template<typename KeyType, typename ValueType, typename KeyComparator>
+	SiblingType BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_sibling_select(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *l_sib, 
+																							BPTreeInternalPage<KeyType, ValueType, KeyComparator> *r_sib, 
+																							BPTreeInternalPage<KeyType, ValueType, KeyComparator> *parent, int i)
 	{
 		if (i == -1) {
 			/* the frist sub-node, no left sibling, choose the right one */
@@ -317,7 +326,8 @@ namespace udb
 		}
 	}
 
-	void BPTreeInternalPage::non_leaf_shift_from_left(BPTreeInternalPage *left,int parent_key_index, int remove, BufferPool* buffer_pool)
+	template<typename KeyType, typename ValueType, typename KeyComparator>
+	void BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_shift_from_left(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *left,int parent_key_index, int remove, BufferPool* buffer_pool)
 	{
 		int i;
 		/* node's elements right shift */
@@ -330,7 +340,7 @@ namespace udb
 		}
 		/* parent key right rotation */
 		Page* parent_page = buffer_pool->GetPage(GetParent());
-		BPTreeInternalPage* parent = reinterpret_cast<BPTreeInternalPage*>(parent_page->GetData());
+		BPTreeInternalPage<KeyType, ValueType, KeyComparator>* parent = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(parent_page->GetData());
 		parent_page->SetDirty();
 		SetKeyAt(0, parent->KeyAt(parent_key_index));
 		parent->SetKeyAt(parent_key_index, left->KeyAt(left->GetChildren() - 2));
@@ -342,12 +352,13 @@ namespace udb
 		left->SetChildren(left->GetChildren() - 1);
 	}
 
-	void BPTreeInternalPage::non_leaf_merge_into_left(BPTreeInternalPage *left, int parent_key_index, int remove, BufferPool* buffer_pool)
+	template<typename KeyType, typename ValueType, typename KeyComparator>
+	void BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_merge_into_left(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *left, int parent_key_index, int remove, BufferPool* buffer_pool)
 	{
 		int i, j;
 		/* move parent key down */
 		Page* parent_page = buffer_pool->GetPage(GetParent());
-		BPTreeInternalPage* parent = reinterpret_cast<BPTreeInternalPage*>(parent_page->GetData());
+		BPTreeInternalPage<KeyType, ValueType, KeyComparator>* parent = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(parent_page->GetData());
 		parent_page->SetDirty();
 		left->SetKeyAt(left->GetChildren() - 1, parent->KeyAt(parent_key_index));
 		/* merge into left sibling */
@@ -370,12 +381,13 @@ namespace udb
 		non_leaf_delete(this, buffer_pool);
 	}
 
-	void BPTreeInternalPage::non_leaf_shift_from_right(BPTreeInternalPage *right, int parent_key_index, BufferPool* buffer_pool)
+	template<typename KeyType, typename ValueType, typename KeyComparator>
+	void BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_shift_from_right(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *right, int parent_key_index, BufferPool* buffer_pool)
 	{
 		int i;
 		/* parent key left rotation */
 		Page* parent_page = buffer_pool->GetPage(GetParent());
-		BPTreeInternalPage* parent = reinterpret_cast<BPTreeInternalPage*>(parent_page->GetData());
+		BPTreeInternalPage<KeyType, ValueType, KeyComparator>* parent = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(parent_page->GetData());
 		parent_page->SetDirty();
 		SetKeyAt(GetChildren() - 1, parent->KeyAt(parent_key_index));
 		parent->SetKeyAt(parent_key_index, right->KeyAt(0));
@@ -395,12 +407,13 @@ namespace udb
 		right->SetChildren(right->GetChildren() - 1);
 	}
 
-	void BPTreeInternalPage::non_leaf_merge_from_right(BPTreeInternalPage *right, int parent_key_index, BufferPool* buffer_pool)
+	template<typename KeyType, typename ValueType, typename KeyComparator>
+	void BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_merge_from_right(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *right, int parent_key_index, BufferPool* buffer_pool)
 	{
 		int i, j;
 		/* move parent key down */
 		Page* parent_page = buffer_pool->GetPage(GetParent());
-		BPTreeInternalPage* parent = reinterpret_cast<BPTreeInternalPage*>(parent_page->GetData());
+		BPTreeInternalPage<KeyType, ValueType, KeyComparator>* parent = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(parent_page->GetData());
 		parent_page->SetDirty();
 		SetKeyAt(GetChildren() - 1, parent->KeyAt(parent_key_index));
 		SetChildren(GetChildren() + 1);
@@ -418,7 +431,8 @@ namespace udb
 		non_leaf_delete(right, buffer_pool);
 	}
 
-	void BPTreeInternalPage::non_leaf_simple_remove(int remove)
+	template<typename KeyType, typename ValueType, typename KeyComparator>
+	void BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_simple_remove(int remove)
 	{
 		for (; remove < GetChildren() - 2; remove++) {
 			SetKeyAt(remove, KeyAt(remove + 1));
@@ -428,17 +442,18 @@ namespace udb
 		SetChildren(GetChildren() - 1);
 	}
 
-	void BPTreeInternalPage::non_leaf_remove(BPTree* tree, int remove, BufferPool* buffer_pool)
+	template<typename KeyType, typename ValueType, typename KeyComparator>
+	void BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_remove(BPTree<KeyType, ValueType, KeyComparator>* tree, int remove, BufferPool* buffer_pool)
 	{
 		if (GetChildren() <= (tree->GetOrder() + 1) / 2) {
 			Page* parent_page = buffer_pool->GetPage(GetParent());
 			Page* lsib_page = buffer_pool->GetPage(GetLeftSib());
 			Page* rsib_page = buffer_pool->GetPage(GetRightSib());
-			BPTreeInternalPage *parent = reinterpret_cast<BPTreeInternalPage*>(parent_page->GetData());
+			BPTreeInternalPage<KeyType, ValueType, KeyComparator> *parent = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(parent_page->GetData());
 			parent_page->SetDirty();
-			BPTreeInternalPage *l_sib = reinterpret_cast<BPTreeInternalPage*>(lsib_page->GetData());
+			BPTreeInternalPage<KeyType, ValueType, KeyComparator> *l_sib = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(lsib_page->GetData());
 			lsib_page->SetDirty();
-			BPTreeInternalPage *r_sib = reinterpret_cast<BPTreeInternalPage*>(rsib_page->GetData());
+			BPTreeInternalPage<KeyType, ValueType, KeyComparator> *r_sib = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(rsib_page->GetData());
 			rsib_page->SetDirty();
 
 			if (GetParent() != -1) {
@@ -478,4 +493,6 @@ namespace udb
 			non_leaf_simple_remove(remove);
 		}
 	}
+
+	template class BPTreeInternalPage<int, RID, IntComparator>;
 } // namespace udb

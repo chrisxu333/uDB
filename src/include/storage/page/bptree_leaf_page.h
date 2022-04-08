@@ -1,12 +1,13 @@
 #pragma once
 
-#include "bptree_page.h"
+#include "include/storage/page/bptree_internal_page.h"
 
 namespace udb
 {
     #define LEAF_PAGE_HEADER_SIZE 32
     #define LEAF_PAGE_DATA_SIZE ((4096 - LEAF_PAGE_HEADER_SIZE) / (sizeof(std::pair<int, int>)))
 
+    template <typename KeyType, typename ValueType, typename KeyComparator>
     class BPTreeLeafPage : public BPTreePage{
         public:
             BPTreeLeafPage(): BPTreePage(NodeType::BPLUS_TREE_LEAF, -1, -1){
@@ -30,9 +31,9 @@ namespace udb
 
             int GetRightSib(){ return rsib_page_id_; }
 
-            int KeyAt(int index){ return keys_[index].first; }
+            KeyType KeyAt(int index){ return keys_[index].first; }
 
-            int ValueAt(int index){ return keys_[index].second; }
+            ValueType ValueAt(int index){ return keys_[index].second; }
             
             int GetEntry(){ return entries_; }
 
@@ -49,33 +50,33 @@ namespace udb
                 rsib_page_id_ = rsib_page_id;
             }
 
-            void SetKeyAt(int index, int value){
+            void SetKeyAt(int index, KeyType value){
                 keys_[index].first = value;
             }
 
-            void SetDataAt(int index, int value){
+            void SetDataAt(int index, ValueType value){
                 keys_[index].second = value;
             }
 
             // private APIs ==========================================================================
             int key_binary_search(int len, int target);
 
-            int parent_node_build(BPTree* tree, int page_id_left, int page_id_right, int key, int level, BufferPool* buffer_pool);
+            int parent_node_build(BPTree<KeyType, ValueType, KeyComparator>* tree, int page_id_left, int page_id_right, KeyType key, int level, BufferPool* buffer_pool);
 
             // public APIs =========================================================================
-            int leaf_insert(BPTree* tree, int key, int data, BufferPool* buffer_pool);
+            int leaf_insert(BPTree<KeyType, ValueType, KeyComparator>* tree, KeyType key, ValueType data, BufferPool* buffer_pool);
 
-            void leaf_split_left(BPTreeLeafPage *left, int key, int data, int insert);
+            void leaf_split_left(BPTreeLeafPage *left, KeyType key, ValueType data, int insert);
 
-            void leaf_split_right(BPTreeLeafPage *right, int key, int data, int insert);
+            void leaf_split_right(BPTreeLeafPage *right, KeyType key, ValueType data, int insert);
 
-            void leaf_simple_insert(int key, int data, int insert);
+            void leaf_simple_insert(KeyType key, ValueType data, int insert);
 
-            int leaf_remove(BPTree* tree, int key, BufferPool* buffer_pool);
+            int leaf_remove(BPTree<KeyType, ValueType, KeyComparator>* tree, KeyType key, BufferPool* buffer_pool);
 
             void leaf_delete(BPTreeLeafPage *node, BufferPool* buffer_pool);
 
-            SiblingType leaf_sibling_select( BPTreeLeafPage *l_sib,  BPTreeLeafPage *r_sib, BPTreeInternalPage *parent, int i);
+            SiblingType leaf_sibling_select( BPTreeLeafPage<KeyType, ValueType, KeyComparator> *l_sib,  BPTreeLeafPage<KeyType, ValueType, KeyComparator> *r_sib, BPTreeInternalPage<KeyType, ValueType, KeyComparator> *parent, int i);
 
             void leaf_shift_from_left(BPTreeLeafPage *left, int parent_key_index, int remove, BufferPool* buffer_pool);
 
@@ -91,6 +92,6 @@ namespace udb
             int lsib_page_id_;
             int rsib_page_id_;
             int entries_;   // 4 bytes int
-            std::pair<int, int> keys_[LEAF_PAGE_DATA_SIZE];
+            std::pair<KeyType, ValueType> keys_[LEAF_PAGE_DATA_SIZE];
     };
 } // namespace udb

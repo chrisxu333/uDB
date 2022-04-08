@@ -65,7 +65,7 @@ namespace udb
         }
     }
 
-    int DiskManager::GetFileSize() {
+    inline int DiskManager::GetFileSize() {
         struct stat stat_buf;
         int rc = stat(db_file_name_.c_str(), &stat_buf);
         return rc == 0 ? static_cast<int>(stat_buf.st_size) : -1;

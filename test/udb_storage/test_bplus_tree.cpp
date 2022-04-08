@@ -18,7 +18,7 @@ namespace udb
 
     inline int children(BPTreePage *node)
     {
-        return reinterpret_cast<BPTreeInternalPage *>(node)->GetChildren();
+        return reinterpret_cast<BPTreeInternalPage<int, RID, IntComparator> *>(node)->GetChildren();
     }
 
     void node_key_dump(BPTreePage *node)
@@ -26,11 +26,11 @@ namespace udb
 		int i;
 		if (node->GetType() == NodeType::BPLUS_TREE_LEAF) {
 			for (i = 0; i < node->GetCount(); i++) {
-				printf("%d ", reinterpret_cast<BPTreeLeafPage *>(node)->KeyAt(i));
+				printf("%d ", reinterpret_cast<BPTreeLeafPage<int, RID, IntComparator> *>(node)->KeyAt(i));
 			}
 		} else {
 			for (i = 0; i < node->GetCount() - 1; i++) {
-				printf("%d ", reinterpret_cast<BPTreeInternalPage *>(node)->KeyAt(i));
+				printf("%d ", reinterpret_cast<BPTreeInternalPage<int, RID, IntComparator> *>(node)->KeyAt(i));
 			}
 		}
 		printf("\n");
@@ -39,9 +39,9 @@ namespace udb
     int node_key(BPTreePage *node, int i)
 	{
 		if (node->GetType() == NodeType::BPLUS_TREE_LEAF) {
-			return reinterpret_cast<BPTreeLeafPage *>(node)->KeyAt(i);
+			return reinterpret_cast<BPTreeLeafPage<int, RID, IntComparator> *>(node)->KeyAt(i);
 		} else {
-			return reinterpret_cast<BPTreeInternalPage *>(node)->KeyAt(i);
+			return reinterpret_cast<BPTreeInternalPage<int, RID, IntComparator> *>(node)->KeyAt(i);
 		}
     }
 
@@ -49,13 +49,13 @@ namespace udb
     {
             int i;
             if (node->GetType() == NodeType::BPLUS_TREE_LEAF) {
-				BPTreeLeafPage *leaf = reinterpret_cast<BPTreeLeafPage *>(node);
+				BPTreeLeafPage<int, RID, IntComparator> *leaf = reinterpret_cast<BPTreeLeafPage<int, RID, IntComparator> *>(node);
 				printf("leaf:");
 				for (i = 0; i < leaf->GetEntry(); i++) {
 					printf(" %d", leaf->KeyAt(i));
 				}
             } else {
-				BPTreeInternalPage *non_leaf = reinterpret_cast<BPTreeInternalPage *>(node);
+				BPTreeInternalPage<int, RID, IntComparator> *non_leaf = reinterpret_cast<BPTreeInternalPage<int, RID, IntComparator> *>(node);
 				printf("node:");
 				for (i = 0; i < non_leaf->GetChildren() - 1; i++) {
 					printf(" %d", non_leaf->KeyAt(i));
@@ -64,7 +64,7 @@ namespace udb
             printf("\n");
     }
 
-    void bplus_tree_dump(BPTree *tree)
+    void bplus_tree_dump(BPTree<int, RID, IntComparator> *tree)
     {
 		int level = 0;
 		BPTreePage *node = tree->GetRoot();
@@ -108,7 +108,7 @@ namespace udb
 				}
 
 				/* Move deep down */
-				node = node->GetType() == NodeType::BPLUS_TREE_LEAF ? NULL : ((struct BPTreeInternalPage *) node)->ValueAt(sub_idx);
+				node = node->GetType() == NodeType::BPLUS_TREE_LEAF ? NULL : ((struct BPTreeInternalPage<int, RID, IntComparator> *) node)->ValueAt(sub_idx);
 			} else {
 				p_nbl = top == nbl_stack ? NULL : --top;
 				if (p_nbl == NULL) {
@@ -131,11 +131,12 @@ namespace udb
 			// std::cout << "Build test case round " << round << std::endl;
 			DiskManager* disk_manager = new DiskManager("file.db");
 			BufferPool* buffer_pool = new BufferPool(300, disk_manager);
-        	BPTree* tree = new BPTree(10, 10, buffer_pool);
+        	BPTree<int, RID, IntComparator>* tree = new BPTree<int, RID, IntComparator>(10, 10, buffer_pool);
 
 			std::random_shuffle(data, data + 500);
 			for(int i = 1; i <= 500; ++i){
-				tree->insert(i, 1);
+				RID id(i, 1);
+				tree->insert(i, id);
 			}			
 			std::random_shuffle(data, data + 500); 
 			for(int i = 1; i <= 500; ++i){

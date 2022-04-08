@@ -20,7 +20,9 @@ namespace udb
 			RIGHT_SIBLING = 1,
 	};
 
+	template<typename KeyType, typename ValueType, typename KeyComparator>
 	class BPTreeInternalPage;
+	template<typename KeyType, typename ValueType, typename KeyComparator>
 	class BPTree;
 
 	class BPTreePage {

@@ -33,7 +33,7 @@ namespace udb
                 return pin_count_;
             }
 
-            inline int SetPinCount(int pin_count){
+            inline void SetPinCount(int pin_count){
                 pin_count_ = pin_count;
             }
 

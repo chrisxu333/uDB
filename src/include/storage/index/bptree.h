@@ -1,5 +1,4 @@
 #pragma once
-#include "include/storage/page/bptree_page.h"
 #include "include/storage/page/bptree_leaf_page.h"
 #include "include/storage/page/bptree_internal_page.h"
 #include "include/common/type.h"
@@ -10,6 +9,7 @@
 
 namespace udb
 {
+	template<typename KeyType, typename ValueType, typename KeyComparator>
 	class BPTree {
 	public:
 		explicit BPTree(int order, int entries, BufferPool* buffer_pool){
@@ -32,7 +32,6 @@ namespace udb
 		void SetRoot(BPTreePage* root){ root_ = root;}
 
 		// Private APIs ========================================================================
-
 		int key_binary_search(int *arr, int len, int target){
 			int low = -1;
 			int high = len;
@@ -58,14 +57,14 @@ namespace udb
 			return root_ == nullptr;
 		}
 
-		int insert(int key, int data){
+		int insert(KeyType key, ValueType data){
 			BPTreePage *node = GetRoot();
 			while (node != nullptr) {
 				if (node->GetType() == NodeType::BPLUS_TREE_LEAF) {
-					BPTreeLeafPage *ln = reinterpret_cast<BPTreeLeafPage *>(node);
+					BPTreeLeafPage<KeyType, ValueType, KeyComparator> *ln = reinterpret_cast<BPTreeLeafPage<KeyType, ValueType, KeyComparator> *>(node);
 					return ln->leaf_insert(this, key, data, buffer_pool_);
 				} else {
-					BPTreeInternalPage *nln = reinterpret_cast<BPTreeInternalPage *>(node);
+					BPTreeInternalPage<KeyType, ValueType, KeyComparator> *nln = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator> *>(node);
 					int i = nln->key_binary_search(nln->GetChildren() - 1, key);
 					if (i >= 0) {
 						node = nln->ValueAt(i + 1);
@@ -78,7 +77,7 @@ namespace udb
 
 			/* new root */
 			Page* root_page = buffer_pool_->NewPage();
-			BPTreeLeafPage* root = reinterpret_cast<BPTreeLeafPage*>(root_page->GetData());
+			BPTreeLeafPage<KeyType, ValueType, KeyComparator>* root = reinterpret_cast<BPTreeLeafPage<KeyType, ValueType, KeyComparator>*>(root_page->GetData());
 			root->Init(root_page->GetPageId());
 			
 			root->SetKeyAt(0, key);
@@ -88,14 +87,14 @@ namespace udb
 			return 0;
 		}
 
-		int remove(int key){
+		int remove(KeyType key){
 			BPTreePage *node = GetRoot();
 			while (node != nullptr) {
 				if (node->GetType() == NodeType::BPLUS_TREE_LEAF) {
-					BPTreeLeafPage *ln = reinterpret_cast<BPTreeLeafPage*>(node);
+					BPTreeLeafPage<KeyType, ValueType, KeyComparator> *ln = reinterpret_cast<BPTreeLeafPage<KeyType, ValueType, KeyComparator>*>(node);
 					return ln->leaf_remove(this, key, buffer_pool_);
 				} else {
-					BPTreeInternalPage *nln = reinterpret_cast<BPTreeInternalPage*>(node);
+					BPTreeInternalPage<KeyType, ValueType, KeyComparator> *nln = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(node);
 					int i = nln->key_binary_search(nln->GetChildren() - 1, key);
 					if (i >= 0) {
 							node = nln->ValueAt(i + 1);

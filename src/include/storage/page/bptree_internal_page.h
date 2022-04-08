@@ -6,6 +6,7 @@ namespace udb
     #define INTERNAL_PAGE_HEADER_SIZE 32
     #define INTERNAL_PAGE_DATA_SIZE ((4096 - INTERNAL_PAGE_HEADER_SIZE) / (sizeof(std::pair<int, int>)))
 
+    template<typename KeyType, typename ValueType, typename KeyComparator>
     class BPTreeInternalPage : public BPTreePage {
         public:
             BPTreeInternalPage(): BPTreePage(NodeType::BPLUS_TREE_NON_LEAF, -1, -1){
@@ -27,7 +28,7 @@ namespace udb
             int GetLeftSib(){ return lsib_page_id_; }
             int GetRightSib(){ return rsib_page_id_; }
 
-            int KeyAt(int index){ return keys_[index].first; }
+            KeyType KeyAt(int index){ return keys_[index].first; }
             BPTreePage* ValueAt(int index){ return keys_[index].second; }
 
             int GetChildren(){ return children_; }
@@ -45,7 +46,7 @@ namespace udb
             }
 
 
-            void SetKeyAt(int index, int value){
+            void SetKeyAt(int index, KeyType value){
                 keys_[index].first = value;
             }
 
@@ -55,35 +56,35 @@ namespace udb
 
             // private APIs ===========================================
 
-            int parent_node_build(BPTree* tree, int page_id_left, int page_id_right, int key, int level, BufferPool* buffer_pool);
+            int parent_node_build(BPTree<KeyType, ValueType, KeyComparator>* tree, int page_id_left, int page_id_right, KeyType key, int level, BufferPool* buffer_pool);
 
-            int non_leaf_insert(BPTree* tree, int page_id_l_ch,  int page_id_r_ch, int key, int level, BufferPool* buffer_pool);
+            int non_leaf_insert(BPTree<KeyType, ValueType, KeyComparator>* tree, int page_id_l_ch,  int page_id_r_ch, KeyType key, int level, BufferPool* buffer_pool);
 
-            void non_leaf_simple_insert(BPTreePage *l_ch, BPTreePage *r_ch, int key, int insert);
+            void non_leaf_simple_insert(BPTreePage *l_ch, BPTreePage *r_ch, KeyType key, int insert);
 
             int key_binary_search(int len, int target);
 
-            int non_leaf_split_left( BPTreeInternalPage *left, BPTreePage *l_ch,  BPTreePage *r_ch, int key, int insert, BufferPool* buffer_pool);
+            int non_leaf_split_left( BPTreeInternalPage<KeyType, ValueType, KeyComparator> *left, BPTreePage *l_ch,  BPTreePage *r_ch, KeyType key, int insert, BufferPool* buffer_pool);
 
-            int non_leaf_split_right1(BPTreeInternalPage *right, BPTreePage *l_ch,  BPTreePage *r_ch, int key, int insert, BufferPool* buffer_pool);
+            int non_leaf_split_right1(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *right, BPTreePage *l_ch,  BPTreePage *r_ch, KeyType key, int insert, BufferPool* buffer_pool);
 
-            int non_leaf_split_right2(BPTreeInternalPage *right, BPTreePage *l_ch,  BPTreePage *r_ch, int key, int insert, BufferPool* buffer_pool);
+            int non_leaf_split_right2(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *right, BPTreePage *l_ch,  BPTreePage *r_ch, KeyType key, int insert, BufferPool* buffer_pool);
 
-            void non_leaf_delete(BPTreeInternalPage *node, BufferPool* buffer_pool);
+            void non_leaf_delete(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *node, BufferPool* buffer_pool);
             
-            SiblingType non_leaf_sibling_select(BPTreeInternalPage *l_sib, BPTreeInternalPage *r_sib, BPTreeInternalPage *parent, int i);
+            SiblingType non_leaf_sibling_select(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *l_sib, BPTreeInternalPage<KeyType, ValueType, KeyComparator> *r_sib, BPTreeInternalPage<KeyType, ValueType, KeyComparator> *parent, int i);
 
-            void non_leaf_shift_from_left(BPTreeInternalPage *left, int parent_key_index, int remove, BufferPool* buffer_pool);
+            void non_leaf_shift_from_left(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *left, int parent_key_index, int remove, BufferPool* buffer_pool);
 
-            void non_leaf_merge_into_left(BPTreeInternalPage *left, int parent_key_index, int remove, BufferPool* buffer_pool);
+            void non_leaf_merge_into_left(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *left, int parent_key_index, int remove, BufferPool* buffer_pool);
 
-            void non_leaf_shift_from_right(BPTreeInternalPage *right, int parent_key_index, BufferPool* buffer_pool);
+            void non_leaf_shift_from_right(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *right, int parent_key_index, BufferPool* buffer_pool);
 
-            void non_leaf_merge_from_right(BPTreeInternalPage *right, int parent_key_index, BufferPool* buffer_pool);
+            void non_leaf_merge_from_right(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *right, int parent_key_index, BufferPool* buffer_pool);
 
             void non_leaf_simple_remove(int remove);
 
-            void non_leaf_remove(BPTree* tree, int remove, BufferPool* buffer_pool);
+            void non_leaf_remove(BPTree<KeyType, ValueType, KeyComparator>* tree, int remove, BufferPool* buffer_pool);
 
         private:
             int lsib_page_id_;
