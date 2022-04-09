@@ -89,7 +89,7 @@ namespace udb
 
         pool_[page_id] = fid;
         page->page_id_ = page_id;
-        page->dirty_bit_ = false;
+        page->dirty_bit_ = true;
         page->pin_count_ = 1;
         page->meminit();
 

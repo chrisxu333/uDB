@@ -64,10 +64,12 @@ namespace udb
             printf("\n");
     }
 
-    void bplus_tree_dump(BPTree<int, RID, IntComparator> *tree)
+    void bplus_tree_dump(BPTree<int, RID, IntComparator> *tree, BufferPool* buffer_pool)
     {
 		int level = 0;
-		BPTreePage *node = tree->GetRoot();
+		Page* root_page = buffer_pool->GetPage(tree->GetRoot());
+		BPTreePage* node = reinterpret_cast<BPTreeInternalPage<int, RID, IntComparator>*>(root_page->GetData());
+
 		struct node_backlog *p_nbl = NULL;
 		struct node_backlog nbl_stack[MAX_ORDER];
 		struct node_backlog *top = nbl_stack;
@@ -108,7 +110,12 @@ namespace udb
 				}
 
 				/* Move deep down */
-				node = node->GetType() == NodeType::BPLUS_TREE_LEAF ? NULL : ((struct BPTreeInternalPage<int, RID, IntComparator> *) node)->ValueAt(sub_idx);
+				if(node->GetType() == NodeType::BPLUS_TREE_LEAF){
+					node = NULL;
+				}else{
+					Page* page = buffer_pool->GetPage(reinterpret_cast<BPTreeInternalPage<int, RID, IntComparator>*>(node)->ValueAt(sub_idx));
+					node = reinterpret_cast<BPTreePage*>(page->GetData());	
+				}
 			} else {
 				p_nbl = top == nbl_stack ? NULL : --top;
 				if (p_nbl == NULL) {
@@ -143,6 +150,14 @@ namespace udb
 				tree->remove(data[i - 1]);
 			}			
 			ASSERT_TRUE(tree->isEmpty());
+
+			// std::string line;
+			// while(1){
+			// 	getline(std::cin, line);
+			// 	RID id(1,1);
+			// 	tree->insert(stoi(line), id);
+			// 	bplus_tree_dump(tree, buffer_pool);
+			// }
 
 			delete disk_manager;
 			delete buffer_pool;

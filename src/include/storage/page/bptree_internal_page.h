@@ -29,7 +29,7 @@ namespace udb
             int GetRightSib(){ return rsib_page_id_; }
 
             KeyType KeyAt(int index){ return keys_[index].first; }
-            BPTreePage* ValueAt(int index){ return keys_[index].second; }
+            page_id_t ValueAt(int index){ return keys_[index].second; }
 
             int GetChildren(){ return children_; }
 
@@ -50,7 +50,7 @@ namespace udb
                 keys_[index].first = value;
             }
 
-            void SetPtrAt(int index, BPTreePage * value){
+            void SetPtrAt(int index, page_id_t value){
                 keys_[index].second = value;
             }
 
@@ -60,7 +60,7 @@ namespace udb
 
             int non_leaf_insert(BPTree<KeyType, ValueType, KeyComparator>* tree, int page_id_l_ch,  int page_id_r_ch, KeyType key, int level, BufferPool* buffer_pool);
 
-            void non_leaf_simple_insert(BPTreePage *l_ch, BPTreePage *r_ch, KeyType key, int insert);
+            void non_leaf_simple_insert(BPTreePage *l_ch, BPTreePage *r_ch, KeyType key, int insert, BufferPool* buffer_pool);
 
             int key_binary_search(int len, int target);
 
@@ -82,7 +82,7 @@ namespace udb
 
             void non_leaf_merge_from_right(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *right, int parent_key_index, BufferPool* buffer_pool);
 
-            void non_leaf_simple_remove(int remove);
+            void non_leaf_simple_remove(int remove, BufferPool* buffer_pool);
 
             void non_leaf_remove(BPTree<KeyType, ValueType, KeyComparator>* tree, int remove, BufferPool* buffer_pool);
 
@@ -90,6 +90,6 @@ namespace udb
             int lsib_page_id_;
             int rsib_page_id_;
             int children_;
-            std::pair<int, BPTreePage*> keys_[INTERNAL_PAGE_DATA_SIZE];
+            std::pair<int, page_id_t> keys_[INTERNAL_PAGE_DATA_SIZE];
     };
 } // namespace udb

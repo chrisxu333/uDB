@@ -20,15 +20,23 @@ namespace udb
 			parent->Init(parent_page->GetPageId());
 
 			parent->SetKeyAt(0, key);
-			parent->SetPtrAt(0, left);
-			parent->ValueAt(0)->SetParent(parent->GetPageId());
-			parent->ValueAt(0)->SetParentIndex(-1);
-			parent->SetPtrAt(1, right);
-			parent->ValueAt(1)->SetParent(parent->GetPageId());
-			parent->ValueAt(1)->SetParentIndex(0);
+			parent->SetPtrAt(0, left->GetPageId());
+
+			Page* zero_page = buffer_pool->GetPage(parent->ValueAt(0));
+			BPTreePage* zero = reinterpret_cast<BPTreeInternalPage*>(zero_page->GetData());
+			zero->SetParent(parent->GetPageId());
+			zero->SetParentIndex(-1);
+			parent->SetPtrAt(1, right->GetPageId());
+
+			
+			Page* first_page = buffer_pool->GetPage(parent->ValueAt(1));
+			BPTreePage* first = reinterpret_cast<BPTreeInternalPage*>(first_page->GetData());
+			first->SetParent(parent->GetPageId());
+			first->SetParentIndex(0);
+
 			parent->SetChildren(2);
 			/* update root */
-			tree->SetRoot(reinterpret_cast<BPTreePage *>(parent));
+			tree->SetRoot(reinterpret_cast<BPTreePage *>(parent)->GetPageId());
 			return 0;
 		} else if (right->GetParent() == -1) {
 			/* trace upwards */
@@ -68,7 +76,6 @@ namespace udb
 					
 					Page* sibling_page = buffer_pool->NewPage();
 					BPTreeInternalPage* sibling = reinterpret_cast<BPTreeInternalPage*>(sibling_page->GetData());
-					sibling_page->SetDirty();
 					sibling->Init(sibling_page->GetPageId());
 
 					if (insert < split) {
@@ -87,25 +94,42 @@ namespace udb
 									sibling->GetPageId(), split_key, level, buffer_pool);
 					}
 			} else {
-					non_leaf_simple_insert(l_ch, r_ch, key, insert);
+					non_leaf_simple_insert(l_ch, r_ch, key, insert, buffer_pool);
 			}
 
 			return 0;
 	}
 
 	template<typename KeyType, typename ValueType, typename KeyComparator>
-	void BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_simple_insert(BPTreePage *l_ch, BPTreePage *r_ch, KeyType key, int insert){
+	void BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_simple_insert(BPTreePage *l_ch, BPTreePage *r_ch, KeyType key, int insert, BufferPool* buffer_pool){
 		int i;
 		for (i = GetChildren() - 1; i > insert; i--) {
 			SetKeyAt(i, KeyAt(i - 1));
 			SetPtrAt(i + 1, ValueAt(i));
-			ValueAt(i + 1)->SetParentIndex(i);
+			Page* tmp_page = buffer_pool->GetPage(ValueAt(i + 1));
+			tmp_page->SetDirty();
+			BPTreePage* tmp = reinterpret_cast<BPTreeInternalPage*>(tmp_page->GetData());
+			tmp->SetParentIndex(i);
+			buffer_pool->UnPin(tmp->GetPageId());
 		}
 		SetKeyAt(i, key);
-		SetPtrAt(i, l_ch);
-		ValueAt(i)->SetParentIndex(i - 1);
-		SetPtrAt(i + 1, r_ch);
-		ValueAt(i + 1)->SetParentIndex(i);
+		SetPtrAt(i, l_ch->GetPageId());
+
+		Page* tmp_page = buffer_pool->GetPage(ValueAt(i));
+		tmp_page->SetDirty();
+		BPTreePage* tmp = reinterpret_cast<BPTreeInternalPage*>(tmp_page->GetData());
+		tmp->SetParentIndex(i - 1);
+		buffer_pool->UnPin(tmp_page->GetPageId());
+
+		SetPtrAt(i + 1, r_ch->GetPageId());
+
+		Page* tmpplusone_page = buffer_pool->GetPage(ValueAt(i + 1));
+		tmpplusone_page->SetDirty();
+		BPTreePage* tmpplusone = reinterpret_cast<BPTreeInternalPage*>(tmpplusone_page->GetData());
+		tmpplusone->SetParentIndex(i);
+		buffer_pool->UnPin(tmpplusone_page->GetPageId());
+
+
 		SetChildren(GetChildren() + 1);
 	}
 
@@ -146,17 +170,31 @@ namespace udb
 		/* replicate from sub[0] to sub[split - 1] */
 		for (i = 0, j = 0; i < split; i++, j++) {
 			if (j == insert) {
-				left->SetPtrAt(j, l_ch);
-				left->ValueAt(j)->SetParent(left->GetPageId());
-				left->ValueAt(j)->SetParentIndex(j - 1);
-				left->SetPtrAt(j + 1, r_ch);
-				left->ValueAt(j + 1)->SetParent(left->GetPageId());
-				left->ValueAt(j + 1)->SetParentIndex(j);
+				left->SetPtrAt(j, l_ch->GetPageId());
+				Page* left_page_1 = buffer_pool->GetPage(left->ValueAt(j));
+				BPTreePage* left_tree_page_1 = reinterpret_cast<BPTreeInternalPage*>(left_page_1->GetData());
+				left_page_1->SetDirty();
+				left_tree_page_1->SetParent(left->GetPageId());
+				left_tree_page_1->SetParentIndex(j - 1);
+				buffer_pool->UnPin(left_page_1->GetPageId());
+
+				left->SetPtrAt(j + 1, r_ch->GetPageId());
+				Page* left_page_2 = buffer_pool->GetPage(left->ValueAt(j + 1));
+				BPTreePage* left_tree_page_2 = reinterpret_cast<BPTreeInternalPage*>(left_page_2->GetData());
+				left_page_2->SetDirty();
+				left_tree_page_2->SetParent(left->GetPageId());
+				left_tree_page_2->SetParentIndex(j);
+				buffer_pool->UnPin(left_page_2->GetPageId());
+
 				j++;
 			} else {
 				left->SetPtrAt(j, ValueAt(i));
-				left->ValueAt(j)->SetParent(left->GetPageId());
-				left->ValueAt(j)->SetParentIndex(j - 1);
+				Page* left_page_1 = buffer_pool->GetPage(left->ValueAt(j));
+				BPTreePage* left_tree_page_1 = reinterpret_cast<BPTreeInternalPage*>(left_page_1->GetData());
+				left_page_1->SetDirty();
+				left_tree_page_1->SetParent(left->GetPageId());
+				left_tree_page_1->SetParentIndex(j - 1);
+				buffer_pool->UnPin(left_page_1->GetPageId());
 			}
 		}
 		left->SetChildren(split);
@@ -171,23 +209,37 @@ namespace udb
 		}
 		if (insert == split - 1) {
 			left->SetKeyAt(insert, key);
-			left->SetPtrAt(insert, l_ch);
-			left->ValueAt(insert)->SetParent(left->GetPageId());
-			left->ValueAt(insert)->SetParentIndex(j - 1);
-			SetPtrAt(0, r_ch);
+			left->SetPtrAt(insert, l_ch->GetPageId());
+			Page* left_page_1 = buffer_pool->GetPage(left->ValueAt(insert));
+			BPTreePage* left_tree_page_1 = reinterpret_cast<BPTreeInternalPage*>(left_page_1->GetData());
+			left_page_1->SetDirty();
+			left_tree_page_1->SetParent(left->GetPageId());
+			left_tree_page_1->SetParentIndex(j - 1);
+			buffer_pool->UnPin(left_page_1->GetPageId());
+
+			SetPtrAt(0, r_ch->GetPageId());
 			split_key = key;
 		} else {
 			SetPtrAt(0, ValueAt(split - 1));
 			split_key = KeyAt(split - 2);
 		}
-		ValueAt(0)->SetParent(GetPageId());
-		ValueAt(0)->SetParentIndex(-1);
+		Page* left_page_1 = buffer_pool->GetPage(ValueAt(0));
+		BPTreePage* left_tree_page_1 = reinterpret_cast<BPTreeInternalPage*>(left_page_1->GetData());
+		left_page_1->SetDirty();
+		left_tree_page_1->SetParent(GetPageId());
+		left_tree_page_1->SetParentIndex(-1);
+		buffer_pool->UnPin(left_page_1->GetPageId());
+
 		/* left shift for right node from split - 1 to children - 1 */
 		for (i = split - 1, j = 0; i < order - 1; i++, j++) {
 			SetKeyAt(j, KeyAt(i));
 			SetPtrAt(j + 1, ValueAt(i + 1));
-			ValueAt(j + 1)->SetParent(GetPageId());
-			ValueAt(j + 1)->SetParentIndex(j);
+			Page* left_page_1 = buffer_pool->GetPage(ValueAt(j + 1));
+			BPTreePage* left_tree_page_1 = reinterpret_cast<BPTreeInternalPage*>(left_page_1->GetData());
+			left_page_1->SetDirty();
+			left_tree_page_1->SetParent(GetPageId());
+			left_tree_page_1->SetParentIndex(j);
+			buffer_pool->UnPin(left_page_1->GetPageId());
 		}
 		SetPtrAt(j, ValueAt(i));
 		SetChildren(j + 1);
@@ -217,18 +269,34 @@ namespace udb
 		SetChildren(split);
 		/* right node's first sub-node */
 		right->SetKeyAt(0, key);
-		right->SetPtrAt(0, l_ch);
-		right->ValueAt(0)->SetParent(right->GetPageId());
-		right->ValueAt(0)->SetParentIndex(-1);
-		right->SetPtrAt(1, r_ch);
-		right->ValueAt(1)->SetParent(right->GetPageId());
-		right->ValueAt(1)->SetParentIndex(0);
+		right->SetPtrAt(0, l_ch->GetPageId());
+
+		Page* rzero_page = buffer_pool->GetPage(right->ValueAt(0));
+		BPTreeInternalPage<KeyType, ValueType, KeyComparator>* rzero = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(rzero_page->GetData());
+		rzero_page->SetDirty();
+		rzero->SetParent(right->GetPageId());
+		rzero->SetParentIndex(-1);
+		buffer_pool->UnPin(rzero_page->GetPageId());
+
+		right->SetPtrAt(1, r_ch->GetPageId());
+		Page* rfirst_page = buffer_pool->GetPage(right->ValueAt(1));
+		BPTreeInternalPage<KeyType, ValueType, KeyComparator>* rfirst = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(rfirst_page->GetData());
+		rfirst_page->SetDirty();
+		rfirst->SetParent(right->GetPageId());
+		rfirst->SetParentIndex(0);
+		buffer_pool->UnPin(rfirst_page->GetPageId());
+
 		/* insertion point is split point, replicate from key[split] */
 		for (i = split, j = 1; i < order - 1; i++, j++) {
 			right->SetKeyAt(j,KeyAt(i));
 			right->SetPtrAt(j + 1, ValueAt(i + 1));
-			right->ValueAt(j + 1)->SetParent(right->GetPageId());
-			right->ValueAt(j + 1)->SetParentIndex(j);
+			
+			Page* rplusone_page = buffer_pool->GetPage(right->ValueAt(j + 1));
+			BPTreeInternalPage<KeyType, ValueType, KeyComparator>* rplusone = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(rplusone_page->GetData());
+			rplusone_page->SetDirty();
+			rplusone->SetParent(right->GetPageId());
+			rplusone->SetParentIndex(j);
+			buffer_pool->UnPin(rplusone_page->GetPageId());
 		}
 		right->SetChildren(j + 1);
 		return split_key;
@@ -258,15 +326,27 @@ namespace udb
 		split_key = KeyAt(split);
 		/* right node's first sub-node */
 		right->SetPtrAt(0, ValueAt(split + 1));
-		right->ValueAt(0)->SetParent(right->GetPageId());
-		right->ValueAt(0)->SetParentIndex(-1);
+
+		Page* rzero_page = buffer_pool->GetPage(right->ValueAt(0));
+		BPTreeInternalPage<KeyType, ValueType, KeyComparator>* rzero = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(rzero_page->GetData());
+		rzero_page->SetDirty();
+		rzero->SetParent(right->GetPageId());
+		rzero->SetParentIndex(-1);
+		buffer_pool->UnPin(rzero_page->GetPageId());
+
 		/* replicate from key[split + 1] to key[order - 1] */
 		for (i = split + 1, j = 0; i < order - 1; j++) {
 			if (j != insert - split - 1) {
 				right->SetKeyAt(j, KeyAt(i));
 				right->SetPtrAt(j + 1, ValueAt(i + 1));
-				right->ValueAt(j + 1)->SetParent(right->GetPageId());
-				right->ValueAt(j + 1)->SetParentIndex(j);
+
+				Page* rplusone_page = buffer_pool->GetPage(right->ValueAt(j + 1));
+				BPTreeInternalPage<KeyType, ValueType, KeyComparator>* rplusone = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(rplusone_page->GetData());
+				rplusone_page->SetDirty();
+				rplusone->SetParent(right->GetPageId());
+				rplusone->SetParentIndex(j);
+				buffer_pool->UnPin(rplusone_page->GetPageId());
+
 				i++;
 			}
 		}
@@ -279,12 +359,23 @@ namespace udb
 		/* insert new key and sub-node */
 		j = insert - split - 1;
 		right->SetKeyAt(j, key);
-		right->SetPtrAt(j, l_ch);
-		right->ValueAt(j)->SetParent(right->GetPageId());
-		right->ValueAt(j)->SetParentIndex(j - 1);
-		right->SetPtrAt(j + 1, r_ch);
-		right->ValueAt(j + 1)->SetParent(right->GetPageId());
-		right->ValueAt(j + 1)->SetParentIndex(j);
+		right->SetPtrAt(j, l_ch->GetPageId());
+
+		Page* rj_page = buffer_pool->GetPage(right->ValueAt(j));
+		BPTreeInternalPage<KeyType, ValueType, KeyComparator>* rj = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(rj_page->GetData());
+		rj_page->SetDirty();
+		rj->SetParent(right->GetPageId());
+		rj->SetParentIndex(j - 1);
+		buffer_pool->UnPin(rj_page->GetPageId());
+
+		right->SetPtrAt(j + 1, r_ch->GetPageId());
+
+		Page* rplusone_page = buffer_pool->GetPage(right->ValueAt(j + 1));
+		BPTreeInternalPage<KeyType, ValueType, KeyComparator>* rplusone = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(rplusone_page->GetData());
+		rplusone_page->SetDirty();
+		rplusone->SetParent(right->GetPageId());
+		rplusone->SetParentIndex(j);
+		buffer_pool->UnPin(rplusone_page->GetPageId());
 		return split_key;
 	}
 
@@ -336,7 +427,11 @@ namespace udb
 		}
 		for (i = remove + 1; i > 0; i--) {
 			SetPtrAt(i, ValueAt(i - 1));
-			ValueAt(i)->SetParentIndex(i - 1);
+			Page* cur_page = buffer_pool->GetPage(ValueAt(i));
+			BPTreePage* cur = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(cur_page->GetData());
+			cur_page->SetDirty();
+			cur->SetParentIndex(i - 1);
+			buffer_pool->UnPin(cur_page->GetPageId());
 		}
 		/* parent key right rotation */
 		Page* parent_page = buffer_pool->GetPage(GetParent());
@@ -347,11 +442,16 @@ namespace udb
 
 		/* borrow the last sub-node from left sibling */
 		SetPtrAt(0, left->ValueAt(left->GetChildren() - 1));
-		ValueAt(0)->SetParent(GetPageId());
-		ValueAt(0)->SetParentIndex(-1);
+
+		Page* rzero_page = buffer_pool->GetPage(ValueAt(0));
+		BPTreeInternalPage<KeyType, ValueType, KeyComparator>* rzero = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(rzero_page->GetData());
+		rzero_page->SetDirty();
+		rzero->SetParent(GetPageId());
+		rzero->SetParentIndex(-1);
 		left->SetChildren(left->GetChildren() - 1);
 	}
 
+//todo
 	template<typename KeyType, typename ValueType, typename KeyComparator>
 	void BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_merge_into_left(BPTreeInternalPage<KeyType, ValueType, KeyComparator> *left, int parent_key_index, int remove, BufferPool* buffer_pool)
 	{
@@ -371,8 +471,12 @@ namespace udb
 		for (i = left->GetChildren(), j = 0; j < GetChildren(); j++) {
 			if (j != remove + 1) {
 					left->SetPtrAt(i, ValueAt(j));
-					left->ValueAt(i)->SetParent(left->GetPageId());
-					left->ValueAt(i)->SetParentIndex(i - 1);
+					Page* ri_page = buffer_pool->GetPage(left->ValueAt(i));
+					BPTreeInternalPage<KeyType, ValueType, KeyComparator>* ri = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(ri_page->GetData());
+					ri_page->SetDirty();
+					ri->SetParent(left->GetPageId());
+					ri->SetParentIndex(i - 1);
+					buffer_pool->UnPin(ri_page->GetPageId());
 					i++;
 			}
 		}
@@ -393,16 +497,26 @@ namespace udb
 		parent->SetKeyAt(parent_key_index, right->KeyAt(0));
 		/* borrow the frist sub-node from right sibling */
 		SetPtrAt(GetChildren(), right->ValueAt(0));
-		ValueAt(GetChildren())->SetParent(GetPageId());
-		ValueAt(GetChildren())->SetParentIndex(GetChildren() - 1);
+
+		Page* children_page = buffer_pool->GetPage(ValueAt(GetChildren()));
+		BPTreeInternalPage<KeyType, ValueType, KeyComparator>* children = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(children_page->GetData());
+		children_page->SetDirty();
+		children->SetParent(GetPageId());
+		children->SetParentIndex(GetChildren() - 1);
+		buffer_pool->UnPin(children_page->GetPageId());
 		SetChildren(GetChildren() + 1);
+
 		/* left shift in right sibling */
 		for (i = 0; i < right->GetChildren() - 2; i++) {
 			right->SetKeyAt(i, right->KeyAt(i + 1));
 		}
 		for (i = 0; i < right->GetChildren() - 1; i++) {
 			right->SetPtrAt(i, right->ValueAt(i + 1));
-			right->ValueAt(i)->SetParentIndex(i - 1);
+			Page* tmp_page = buffer_pool->GetPage(right->ValueAt(i));
+			BPTreeInternalPage<KeyType, ValueType, KeyComparator>* tmp = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(tmp_page->GetData());
+			tmp_page->SetDirty();
+			tmp->SetParentIndex(i - 1);
+			buffer_pool->UnPin(tmp_page->GetPageId());
 		}
 		right->SetChildren(right->GetChildren() - 1);
 	}
@@ -423,8 +537,12 @@ namespace udb
 		}
 		for (i = GetChildren() - 1, j = 0; j < right->GetChildren(); i++, j++) {
 			SetPtrAt(i, right->ValueAt(j));
-			ValueAt(i)->SetParent(GetPageId());
-			ValueAt(i)->SetParentIndex(i - 1);
+			Page* tmp_page = buffer_pool->GetPage(ValueAt(i));
+			BPTreeInternalPage<KeyType, ValueType, KeyComparator>* tmp = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(tmp_page->GetData());
+			tmp_page->SetDirty();
+			tmp->SetParent(GetPageId());
+			tmp->SetParentIndex(i - 1);
+			buffer_pool->UnPin(tmp_page->GetPageId());
 		}
 		SetChildren(i);
 		/* delete empty right sibling */
@@ -432,12 +550,16 @@ namespace udb
 	}
 
 	template<typename KeyType, typename ValueType, typename KeyComparator>
-	void BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_simple_remove(int remove)
+	void BPTreeInternalPage<KeyType, ValueType, KeyComparator>::non_leaf_simple_remove(int remove, BufferPool* buffer_pool)
 	{
 		for (; remove < GetChildren() - 2; remove++) {
 			SetKeyAt(remove, KeyAt(remove + 1));
 			SetPtrAt(remove + 1, ValueAt(remove + 2));
-			ValueAt(remove + 1)->SetParentIndex(remove);
+			Page* tmp_page = buffer_pool->GetPage(ValueAt(remove + 1));
+			BPTreeInternalPage<KeyType, ValueType, KeyComparator>* tmp = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(tmp_page->GetData());
+			tmp_page->SetDirty();
+			tmp->SetParentIndex(remove);
+			buffer_pool->UnPin(tmp_page->GetPageId());
 		}
 		SetChildren(GetChildren() - 1);
 	}
@@ -469,7 +591,7 @@ namespace udb
 					}
 				} else {
 					/* remove first in case of overflow during merging with sibling */
-					non_leaf_simple_remove(remove);
+					non_leaf_simple_remove(remove, buffer_pool);
 					if (r_sib->GetChildren() > (tree->GetOrder() + 1) / 2) {
 						non_leaf_shift_from_right(r_sib, i + 1, buffer_pool);
 					} else {
@@ -479,18 +601,23 @@ namespace udb
 					}
 				}
 			} else {
+				// TODO: Get rid of root as a pointer.
 				if (GetChildren() == 2) {
 					/* delete old root node */
-					ValueAt(0)->SetParent(-1);
-					tree->SetRoot(ValueAt(0));
+					Page* newroot_page = buffer_pool->GetPage(ValueAt(0));
+					BPTreeInternalPage<KeyType, ValueType, KeyComparator> *newroot = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(newroot_page->GetData());
+					newroot_page->SetDirty();
+					newroot->SetParent(-1);
+					tree->SetRoot(newroot_page->GetPageId());
+					buffer_pool->UnPin(newroot_page->GetPageId());
 					non_leaf_delete(this, buffer_pool);
 					tree->SetLevel(tree->GetLevel() - 1);
 				} else {
-					non_leaf_simple_remove(remove);
+					non_leaf_simple_remove(remove, buffer_pool);
 				}
 			}
 		} else {
-			non_leaf_simple_remove(remove);
+			non_leaf_simple_remove(remove, buffer_pool);
 		}
 	}
 

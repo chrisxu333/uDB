@@ -66,25 +66,25 @@ namespace udb
             // public APIs =========================================================================
             int leaf_insert(BPTree<KeyType, ValueType, KeyComparator>* tree, KeyType key, ValueType data, BufferPool* buffer_pool);
 
-            void leaf_split_left(BPTreeLeafPage *left, KeyType key, ValueType data, int insert);
+            void leaf_split_left(BPTreeLeafPage<KeyType, ValueType, KeyComparator> *left, KeyType key, ValueType data, int insert);
 
-            void leaf_split_right(BPTreeLeafPage *right, KeyType key, ValueType data, int insert);
+            void leaf_split_right(BPTreeLeafPage<KeyType, ValueType, KeyComparator> *right, KeyType key, ValueType data, int insert);
 
             void leaf_simple_insert(KeyType key, ValueType data, int insert);
 
             int leaf_remove(BPTree<KeyType, ValueType, KeyComparator>* tree, KeyType key, BufferPool* buffer_pool);
 
-            void leaf_delete(BPTreeLeafPage *node, BufferPool* buffer_pool);
+            void leaf_delete(BPTreeLeafPage<KeyType, ValueType, KeyComparator> *node, BufferPool* buffer_pool);
 
             SiblingType leaf_sibling_select( BPTreeLeafPage<KeyType, ValueType, KeyComparator> *l_sib,  BPTreeLeafPage<KeyType, ValueType, KeyComparator> *r_sib, BPTreeInternalPage<KeyType, ValueType, KeyComparator> *parent, int i);
 
-            void leaf_shift_from_left(BPTreeLeafPage *left, int parent_key_index, int remove, BufferPool* buffer_pool);
+            void leaf_shift_from_left(BPTreeLeafPage<KeyType, ValueType, KeyComparator> *left, int parent_key_index, int remove, BufferPool* buffer_pool);
 
-            void leaf_merge_into_left(BPTreeLeafPage *left, int remove, BufferPool* buffer_pool);
+            void leaf_merge_into_left(BPTreeLeafPage<KeyType, ValueType, KeyComparator> *left, int remove, BufferPool* buffer_pool);
 
-            void leaf_shift_from_right(BPTreeLeafPage *right, int parent_key_index, BufferPool* buffer_pool);
+            void leaf_shift_from_right(BPTreeLeafPage<KeyType, ValueType, KeyComparator> *right, int parent_key_index, BufferPool* buffer_pool);
 
-            void leaf_merge_from_right(BPTreeLeafPage *right, BufferPool* buffer_pool);
+            void leaf_merge_from_right(BPTreeLeafPage<KeyType, ValueType, KeyComparator> *right, BufferPool* buffer_pool);
 
             void leaf_simple_remove(int remove);
 

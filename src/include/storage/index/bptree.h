@@ -13,10 +13,10 @@ namespace udb
 	class BPTree {
 	public:
 		explicit BPTree(int order, int entries, BufferPool* buffer_pool){
-			SetRoot(nullptr);
 			SetOrder(order);
 			SetEntry(entries);
 			buffer_pool_ = buffer_pool;
+			SetRoot(INVALID_PAGE_ID);
 		}
 		~BPTree() = default;
 
@@ -24,12 +24,12 @@ namespace udb
 		int GetOrder() const { return order_; }
 		int GetEntry() const { return entries_; }
 		int GetLevel() const { return level_; }
-		BPTreePage* GetRoot(){ return root_; }
+		page_id_t GetRoot(){ return root_; }
 
 		void SetOrder(int order){ order_ = order;}
 		void SetEntry(int entries){ entries_ = entries;}
 		void SetLevel(int level){ level_ = level; }
-		void SetRoot(BPTreePage* root){ root_ = root;}
+		void SetRoot(page_id_t root){ root_ = root;}
 
 		// Private APIs ========================================================================
 		int key_binary_search(int *arr, int len, int target){
@@ -54,23 +54,29 @@ namespace udb
 		// Public APIs ==================================================================
 
 		bool isEmpty(){
-			return root_ == nullptr;
+			return root_ == INVALID_PAGE_ID;
 		}
 
 		int insert(KeyType key, ValueType data){
-			BPTreePage *node = GetRoot();
-			while (node != nullptr) {
-				if (node->GetType() == NodeType::BPLUS_TREE_LEAF) {
-					BPTreeLeafPage<KeyType, ValueType, KeyComparator> *ln = reinterpret_cast<BPTreeLeafPage<KeyType, ValueType, KeyComparator> *>(node);
-					return ln->leaf_insert(this, key, data, buffer_pool_);
-				} else {
-					BPTreeInternalPage<KeyType, ValueType, KeyComparator> *nln = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator> *>(node);
-					int i = nln->key_binary_search(nln->GetChildren() - 1, key);
-					if (i >= 0) {
-						node = nln->ValueAt(i + 1);
+			if(root_ != INVALID_PAGE_ID){
+				Page* node_page = buffer_pool_->GetPage(GetRoot());
+				BPTreePage* node = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(node_page->GetData());
+				node_page->SetDirty();
+				while (node != nullptr) {
+					if (node->GetType() == NodeType::BPLUS_TREE_LEAF) {
+						BPTreeLeafPage<KeyType, ValueType, KeyComparator> *ln = reinterpret_cast<BPTreeLeafPage<KeyType, ValueType, KeyComparator> *>(node);
+						return ln->leaf_insert(this, key, data, buffer_pool_);
 					} else {
-						i = -i - 1;
-						node = nln->ValueAt(i);
+						BPTreeInternalPage<KeyType, ValueType, KeyComparator> *nln = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator> *>(node);
+						int i = nln->key_binary_search(nln->GetChildren() - 1, key);
+						if (i >= 0) {
+							Page* tmp_node = buffer_pool_->GetPage(nln->ValueAt(i + 1));
+							node = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(tmp_node->GetData());
+						} else {
+							i = -i - 1;
+							Page* tmp_node = buffer_pool_->GetPage(nln->ValueAt(i));
+							node = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(tmp_node->GetData());
+						}
 					}
 				}
 			}
@@ -83,12 +89,15 @@ namespace udb
 			root->SetKeyAt(0, key);
 			root->SetDataAt(0, data);
 			root->SetEntry(1);
-			SetRoot(reinterpret_cast<BPTreePage *>(root));
+			SetRoot(root->GetPageId());
+			buffer_pool_->UnPin(root_page->GetPageId());
 			return 0;
 		}
 
 		int remove(KeyType key){
-			BPTreePage *node = GetRoot();
+			Page* node_page = buffer_pool_->GetPage(GetRoot());
+			BPTreePage* node = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(node_page->GetData());
+			node_page->SetDirty();
 			while (node != nullptr) {
 				if (node->GetType() == NodeType::BPLUS_TREE_LEAF) {
 					BPTreeLeafPage<KeyType, ValueType, KeyComparator> *ln = reinterpret_cast<BPTreeLeafPage<KeyType, ValueType, KeyComparator>*>(node);
@@ -97,10 +106,12 @@ namespace udb
 					BPTreeInternalPage<KeyType, ValueType, KeyComparator> *nln = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(node);
 					int i = nln->key_binary_search(nln->GetChildren() - 1, key);
 					if (i >= 0) {
-							node = nln->ValueAt(i + 1);
+							Page* tmp_node = buffer_pool_->GetPage(nln->ValueAt(i + 1));
+							node = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(tmp_node->GetData());
 					} else {
 							i = -i - 1;
-							node = nln->ValueAt(i);
+							Page* tmp_node = buffer_pool_->GetPage(nln->ValueAt(i));
+							node = reinterpret_cast<BPTreeInternalPage<KeyType, ValueType, KeyComparator>*>(tmp_node->GetData());
 					}
 				}
 			}
@@ -111,7 +122,7 @@ namespace udb
 			int order_;
 			int entries_;
 			int level_;
-			BPTreePage *root_;
+			page_id_t root_;
 			BufferPool* buffer_pool_;
 	};
 } // namespace udb
