@@ -16,10 +16,17 @@ namespace udb
                 page_id_ = page_id;
                 slot_id_ = slot_id;
             }
+
+            bool operator==(const RID& rhs){
+                return (page_id_ == rhs.page_id_) && (slot_id_ == rhs.slot_id_);
+            }
+
         private:
             page_id_t page_id_;
             slot_id_t slot_id_;
     };
+
+    static RID INVALID_RID(INVALID_PAGE_ID, INVALID_SLOT_ID);
     
 } // namespace udb
 #endif

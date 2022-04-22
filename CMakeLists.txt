@@ -33,6 +33,7 @@ add_executable(
   ${TEST_STORAGE_DIR}test_disk_manager.cpp
   ${TEST_STORAGE_DIR}test_buffer_pool.cpp
   ${TEST_STORAGE_DIR}test_bplus_tree.cpp
+  ${TEST_STORAGE_DIR}test_hash_index.cpp
 )
 
 add_executable(
