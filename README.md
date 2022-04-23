@@ -1,4 +1,7 @@
 # uDB: Adaptive Database Just For You.
+![GitHub](https://img.shields.io/github/license/chrisxu333/uDB)
+
+
 uDB is a relational database with its unique adaptiveness feature. 
 Given a certain workload, it could quickly fits itself in with self-adjust storage layout, buffer pool, index construction and much more.
 By saying workload, we don't just mean the typical AP or TP workload, but more specific. uDB could learn from the queries given, from the access pattern, from the data stored, to achieve what we called adaptiveness.
