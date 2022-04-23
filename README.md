@@ -1,5 +1,7 @@
 # uDB: Adaptive Database Just For You.
 ![GitHub](https://img.shields.io/github/license/chrisxu333/uDB)
+![GitHub last commit](https://img.shields.io/github/last-commit/chrisxu333/uDB)
+![GitHub top language](https://img.shields.io/github/languages/top/chrisxu333/uDB)
 
 
 uDB is a relational database with its unique adaptiveness feature. 
