@@ -3,6 +3,9 @@
 ![GitHub last commit](https://img.shields.io/github/last-commit/chrisxu333/uDB)
 ![GitHub top language](https://img.shields.io/github/languages/top/chrisxu333/uDB)
 
+*Due to personal reason and interest conflicts, I won't keep pushing my work to this repo until the entire project is finished :(*
+***
+
 
 uDB is a relational database with its unique adaptiveness feature. 
 Given a certain workload, it could quickly fits itself in with self-adjust storage layout, buffer pool, index construction and much more.
